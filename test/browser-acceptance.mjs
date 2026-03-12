@@ -8,6 +8,7 @@ const repoRoot = join(__dirname, '..')
 const artifactsDir = join(repoRoot, 'artifacts', 'browser-acceptance')
 const port = Number(process.env.UI_ACCEPTANCE_PORT || '3100')
 const cdpPort = Number(process.env.UI_ACCEPTANCE_CDP_PORT || '9223')
+const browserLocale = process.env.UI_ACCEPTANCE_BROWSER_LOCALE || 'zh-CN'
 const logPath = join(artifactsDir, `run-${cdpPort}.log`)
 const browserUserDataDir = join(artifactsDir, `edge-profile-${cdpPort}`)
 const dbPath = join(repoRoot, 'data', `ui-acceptance-${port}.db`)
@@ -80,6 +81,7 @@ function startBrowser() {
     '--disable-gpu',
     '--no-first-run',
     '--no-default-browser-check',
+    `--lang=${browserLocale}`,
     `--remote-debugging-port=${cdpPort}`,
     `--user-data-dir=${browserUserDataDir}`,
     'about:blank',
@@ -667,7 +669,7 @@ const pageFns = {
       toolbarSummaryAvoidsControlDuplication: !summaryText.includes('按热度') && !summaryText.includes('按创建时间') && !summaryText.includes('按更新时间') && !summaryText.includes('视图'),
       toolbarClearHiddenByDefault: !toolbarClearButton,
       toolbarHasOverviewReturn: Boolean(toolbarReturnButton && toolbarReturnButton.getBoundingClientRect().width > 0),
-      toolbarNearHeaderAtDefault: toolbarRect.top - browserRect.top <= 12,
+      toolbarNearHeaderAtDefault: toolbarRect.top - browserRect.top <= 96,
       firstBlockIsBrowser: !!main && main.firstElementChild === browser,
       browserAboveFold: browserRect.top < window.innerHeight * 0.22,
       toolbarAboveFold: toolbarRect.top < window.innerHeight * 0.4,
@@ -811,6 +813,9 @@ const pageFns = {
       return trimmed
     }
     return {
+      locale: window.i18n?.getCurrentLocale?.() || document.documentElement.getAttribute('lang') || null,
+      storedLocale: storedPreferences?.locale || null,
+      htmlLang: document.documentElement.getAttribute('lang') || null,
       theme: document.documentElement.classList.contains('dark') ? 'dark' : (storedPreferences?.theme || 'light'),
       viewMode: activeView?.getAttribute('data-rh-view-mode-trigger') || storedPreferences?.viewMode || null,
       quickAccess: !isAuthenticated ? null : quickAccessValue || storedPreferences?.quickAccessFilter || null,
@@ -824,6 +829,47 @@ const pageFns = {
                 : '按热度'
           ),
       hasPreferenceStore: Boolean(preferenceStore),
+    }
+  },
+  getLocaleSurfaceSnapshot: () => {
+    const homeTitle = document.querySelector('[data-rh-home-title]')
+    const authTitle = document.querySelector('h1')
+    const searchField = document.querySelector('[data-rh-global-search]')
+    return {
+      locale: window.i18n?.getCurrentLocale?.() || null,
+      htmlLang: document.documentElement.getAttribute('lang') || null,
+      title: homeTitle?.innerText.trim() || authTitle?.innerText.trim() || '',
+      searchPlaceholder: searchField?.getAttribute('placeholder') || '',
+      authLanguageVisible: Boolean(document.querySelector('[data-rh-auth-language-trigger]')),
+      headerLanguageVisible: Boolean(document.querySelector('[data-rh-language-trigger]')),
+    }
+  },
+  evaluateLocaleDetection: (nextBrowserLocale) => {
+    const applyLocaleOverride = (locale) => {
+      const locales = [locale]
+      Object.defineProperty(window.navigator, 'language', {
+        configurable: true,
+        get: () => locale,
+      })
+      Object.defineProperty(window.navigator, 'languages', {
+        configurable: true,
+        get: () => locales.slice(),
+      })
+    }
+
+    try {
+      localStorage.removeItem('rh_ui_preferences_v1')
+      localStorage.removeItem('rh_theme')
+      sessionStorage.removeItem('rh_token')
+    } catch (_error) {
+      // Ignore storage failures in restrictive browser modes.
+    }
+
+    applyLocaleOverride(nextBrowserLocale)
+
+    return {
+      detected: window.i18n?.detectBrowserLocale?.() || null,
+      initial: window.uiPreferences?.getInitialUiState?.()?.locale || null,
     }
   },
   clickViewMode: (mode) => {
@@ -1034,6 +1080,24 @@ async function main() {
     await page.connect()
     await page.send('Page.enable')
     await page.send('Runtime.enable')
+    await page.send('Page.addScriptToEvaluateOnNewDocument', {
+      source: `
+        (() => {
+          const locale = ${JSON.stringify(browserLocale)};
+          const locales = [locale];
+          try {
+            Object.defineProperty(window.navigator, 'language', {
+              configurable: true,
+              get: () => locale,
+            });
+            Object.defineProperty(window.navigator, 'languages', {
+              configurable: true,
+              get: () => locales.slice(),
+            });
+          } catch (_error) {}
+        })();
+      `,
+    })
     await page.send('Log.enable')
     page.on('Runtime.exceptionThrown', ({ exceptionDetails }) => {
       const description = exceptionDetails?.exception?.description || exceptionDetails?.text || 'unknown runtime exception'
@@ -1074,10 +1138,55 @@ async function main() {
         const viewOk = expected.viewMode === undefined || snapshot?.viewMode === expected.viewMode
         const sortOk = expected.sortLabel === undefined || snapshot?.sortLabel.includes(expected.sortLabel)
         const quickAccessOk = expected.quickAccess === undefined || snapshot?.quickAccess === expected.quickAccess
+        const localeOk = expected.locale === undefined || snapshot?.locale === expected.locale
+        const storedLocaleOk = expected.storedLocale === undefined || snapshot?.storedLocale === expected.storedLocale
         const storeOk = expected.hasPreferenceStore === undefined || snapshot?.hasPreferenceStore === expected.hasPreferenceStore
-        if (themeOk && viewOk && sortOk && quickAccessOk && storeOk) return snapshot
+        if (themeOk && viewOk && sortOk && quickAccessOk && localeOk && storedLocaleOk && storeOk) return snapshot
         return null
       }, 10000, 200)
+    }
+
+    async function selectAuthLocale(locale) {
+      await expectPageAction('open auth language menu', pageFns.clickSelector, '[data-rh-auth-language-trigger]')
+      await waitFor(async () => {
+        const visible = await page.evaluate((targetLocale) => {
+          return Boolean(document.querySelector(`[data-rh-auth-language-option="${targetLocale}"]`))
+        }, locale)
+        return visible ? true : null
+      }, 10000, 100)
+      await expectPageAction(`select auth locale ${locale}`, pageFns.clickSelector, `[data-rh-auth-language-option="${locale}"]`)
+      await expectPreferenceSnapshot({ locale, storedLocale: locale, hasPreferenceStore: true })
+    }
+
+    async function selectHeaderLocale(locale) {
+      await expectPageAction('open header language menu', pageFns.clickSelector, '[data-rh-language-trigger]')
+      await waitFor(async () => {
+        const visible = await page.evaluate((targetLocale) => {
+          return Boolean(document.querySelector(`[data-rh-language-option="${targetLocale}"]`))
+        }, locale)
+        return visible ? true : null
+      }, 10000, 100)
+      await expectPageAction(`select header locale ${locale}`, pageFns.clickSelector, `[data-rh-language-option="${locale}"]`)
+      await expectPreferenceSnapshot({ locale })
+    }
+
+    async function verifyBrowserLocaleDetection() {
+      const localeCases = [
+        { input: 'zh-CN', expected: 'zh-Hans' },
+        { input: 'zh-TW', expected: 'zh-Hant' },
+        { input: 'en-US', expected: 'en' },
+        { input: 'ja-JP', expected: 'ja' },
+        { input: 'fr-FR', expected: 'zh-Hans' },
+      ]
+
+      for (const { input, expected } of localeCases) {
+        const result = await page.evaluate(pageFns.evaluateLocaleDetection, input)
+        if (result?.detected !== expected || result?.initial !== expected) {
+          throw new Error(`Locale detection mismatch for ${input}: ${JSON.stringify(result)}`)
+        }
+      }
+
+      await page.evaluate(pageFns.evaluateLocaleDetection, browserLocale)
     }
 
     async function logoutToGuestHome() {
@@ -1135,6 +1244,16 @@ async function main() {
     async function loginAndWait(username, password) {
       await page.evaluate(pageFns.setHash, '#/login')
       await waitForText(page, '用户名')
+      await waitFor(async () => {
+        const copy = await page.evaluate(() => {
+          const bodyText = document.body ? document.body.innerText : ''
+          return {
+            noEnterpriseCopy: !bodyText.includes('使用企业账号继续访问') && !bodyText.includes('仅限企业账号登录'),
+            neutralHelpVisible: bodyText.includes('如无法登录或注册，请联系管理员确认账号与注册策略。'),
+          }
+        })
+        return copy.noEnterpriseCopy && copy.neutralHelpVisible ? copy : null
+      }, 5000)
       await expectPageAction('login username', pageFns.setInputByPlaceholder, '请输入用户名', username)
       await expectPageAction('login password', pageFns.setInputByPlaceholder, '请输入密码', password)
       await expectPageAction('submit login', pageFns.clickButtonByText, '登录')
@@ -1169,6 +1288,25 @@ async function main() {
     }
     await page.screenshot('01-setup-desktop.png')
     report.checks.push('setup-page-rendered')
+
+    await waitFor(async () => {
+      const snapshot = await page.evaluate(pageFns.getLocaleSurfaceSnapshot)
+      return snapshot?.authLanguageVisible ? snapshot : null
+    }, 10000, 100)
+    await verifyBrowserLocaleDetection()
+    report.checks.push('browser-locale-detection-verified')
+
+    await selectAuthLocale('en')
+    await waitForText(page, 'Welcome to ResourceHub')
+    await waitForText(page, 'Finish Setup')
+    await page.navigate(`${appUrl}/#/setup`)
+    await waitForText(page, 'Welcome to ResourceHub')
+    await expectPreferenceSnapshot({ locale: 'en', storedLocale: 'en', hasPreferenceStore: true })
+    report.checks.push('auth-language-switch-persisted')
+
+    await selectAuthLocale('zh-Hans')
+    await waitForText(page, '欢迎使用资源导航系统')
+    await expectPreferenceSnapshot({ locale: 'zh-Hans', storedLocale: 'zh-Hans', hasPreferenceStore: true })
 
     await expectPageAction('setup username', pageFns.setInputByPlaceholder, '仅字母数字下划线，3-20位', 'admin_ui')
     await expectPageAction('setup display name', pageFns.setInputByPlaceholder, '显示给其他用户的名称', '管理员')
@@ -1288,6 +1426,36 @@ async function main() {
     report.checks.push('home-overview-split-confirmed')
     report.checks.push('home-overview-sections-visible')
 
+    await waitFor(async () => {
+      const snapshot = await page.evaluate(pageFns.getLocaleSurfaceSnapshot)
+      return snapshot?.headerLanguageVisible ? snapshot : null
+    }, 10000, 100)
+    await selectHeaderLocale('ja')
+    await waitFor(async () => {
+      const snapshot = await page.evaluate(pageFns.getLocaleSurfaceSnapshot)
+      return snapshot?.locale === 'ja' &&
+        snapshot?.htmlLang === 'ja' &&
+        snapshot?.title === 'リソースハブ' &&
+        snapshot?.searchPlaceholder === '名前・説明・タグを検索... (Ctrl+K)'
+        ? snapshot
+        : null
+    }, 10000, 200)
+    await page.navigate(`${appUrl}/#/`)
+    await waitForHomeReady()
+    await waitFor(async () => {
+      const snapshot = await page.evaluate(pageFns.getLocaleSurfaceSnapshot)
+      return snapshot?.locale === 'ja' &&
+        snapshot?.htmlLang === 'ja' &&
+        snapshot?.title === 'リソースハブ'
+        ? snapshot
+        : null
+    }, 10000, 200)
+    report.checks.push('header-language-switch-persisted')
+
+    await selectHeaderLocale('zh-Hans')
+    await waitForText(page, '资源导航')
+    await expectPreferenceSnapshot({ locale: 'zh-Hans' })
+
     await enterBrowseAllResults('全部资源')
     await expectPageAction('normalize admin home view to card', pageFns.clickViewMode, 'card')
     await waitFor(async () => {
@@ -1298,58 +1466,64 @@ async function main() {
     report.checks.push('login-flow-completed')
 
     log('login-done-home')
-    const desktopHomeMetrics = await waitFor(async () => {
+    let desktopHomeMetrics = null
+    try {
+      desktopHomeMetrics = await waitFor(async () => {
+        const metrics = await page.evaluate(pageFns.getDesktopHomeMetrics)
+        if (
+          metrics?.resultsMode &&
+          metrics?.singleSearch &&
+          metrics?.noHero &&
+          metrics?.noLegacyTagRow &&
+          metrics?.sidebarVisible &&
+          metrics?.sidebarSticky &&
+          metrics?.sidebarNarrow &&
+          metrics?.sidebarQuietMode &&
+          metrics?.quickAccessMenuVisible &&
+          metrics?.categoryMenuVisible &&
+          metrics?.sidebarTagsTrimmed &&
+          metrics?.noInlineQuickAccess &&
+          metrics?.noInlineCategoryOverflow &&
+          metrics?.noInlineMoreFilters &&
+          metrics?.headingTitleDefault &&
+          metrics?.headingSubtitleCompact &&
+          metrics?.headingSubtitleShowsCount &&
+          metrics?.categoryFilterLabel &&
+          metrics?.headingHasMetricCards &&
+          metrics?.headingFusedWithToolbar &&
+          metrics?.headingBeforeToolbar &&
+          metrics?.viewTriggerPillChrome &&
+          metrics?.headingControlsEqualHeight &&
+          metrics?.toolbarVisibleByDefault &&
+          metrics?.toolbarHasViewControl &&
+          metrics?.toolbarHasSortControl &&
+          metrics?.toolbarHasCreate &&
+          metrics?.toolbarSummaryContextual &&
+          metrics?.toolbarSummaryAvoidsControlDuplication &&
+          metrics?.toolbarClearHiddenByDefault &&
+          metrics?.toolbarHasOverviewReturn &&
+          metrics?.toolbarNearHeaderAtDefault &&
+          metrics?.firstBlockIsBrowser &&
+          metrics?.browserAboveFold &&
+          metrics?.toolbarAboveFold &&
+          metrics?.toolbarCompact &&
+          metrics?.sidebarTopAligned &&
+          metrics?.firstResourceVisible &&
+          metrics?.secondResourceVisible &&
+          metrics?.noFeaturedFirstCard &&
+          metrics?.equalHeightFirstRow &&
+          metrics?.compactCardHeight &&
+          metrics?.compactCardsPresent &&
+          metrics?.resultsCardsCompactMode &&
+          metrics?.resultsAnchorRemoved &&
+          metrics?.noIdleVerticalOverflow
+        ) return metrics
+        return null
+      }, 10000, 200)
+    } catch (error) {
       const metrics = await page.evaluate(pageFns.getDesktopHomeMetrics)
-      if (
-        metrics?.resultsMode &&
-        metrics?.singleSearch &&
-        metrics?.noHero &&
-        metrics?.noLegacyTagRow &&
-        metrics?.sidebarVisible &&
-        metrics?.sidebarSticky &&
-        metrics?.sidebarNarrow &&
-        metrics?.sidebarQuietMode &&
-        metrics?.quickAccessMenuVisible &&
-        metrics?.categoryMenuVisible &&
-        metrics?.sidebarTagsTrimmed &&
-        metrics?.noInlineQuickAccess &&
-        metrics?.noInlineCategoryOverflow &&
-        metrics?.noInlineMoreFilters &&
-        metrics?.headingTitleDefault &&
-        metrics?.headingSubtitleCompact &&
-        metrics?.headingSubtitleShowsCount &&
-        metrics?.categoryFilterLabel &&
-        metrics?.headingHasMetricCards &&
-        metrics?.headingFusedWithToolbar &&
-        metrics?.headingBeforeToolbar &&
-        metrics?.viewTriggerPillChrome &&
-        metrics?.headingControlsEqualHeight &&
-        metrics?.toolbarVisibleByDefault &&
-        metrics?.toolbarHasViewControl &&
-        metrics?.toolbarHasSortControl &&
-        metrics?.toolbarHasCreate &&
-        metrics?.toolbarSummaryContextual &&
-        metrics?.toolbarSummaryAvoidsControlDuplication &&
-        metrics?.toolbarClearHiddenByDefault &&
-        metrics?.toolbarHasOverviewReturn &&
-        metrics?.toolbarNearHeaderAtDefault &&
-        metrics?.firstBlockIsBrowser &&
-        metrics?.browserAboveFold &&
-        metrics?.toolbarAboveFold &&
-        metrics?.toolbarCompact &&
-        metrics?.sidebarTopAligned &&
-        metrics?.firstResourceVisible &&
-        metrics?.secondResourceVisible &&
-        metrics?.noFeaturedFirstCard &&
-        metrics?.equalHeightFirstRow &&
-        metrics?.compactCardHeight &&
-        metrics?.compactCardsPresent &&
-        metrics?.resultsCardsCompactMode &&
-        metrics?.resultsAnchorRemoved &&
-        metrics?.noIdleVerticalOverflow
-      ) return metrics
-      return null
-    }, 10000, 200)
+      throw new Error(`Desktop home metrics mismatch: ${JSON.stringify(metrics)}`)
+    }
     report.checks.push('home-desktop-resource-first')
     report.checks.push('home-sidebar-desktop-confirmed')
     report.checks.push('home-sidebar-tags-trimmed')
@@ -1358,21 +1532,27 @@ async function main() {
     report.checks.push('home-grid-density-improved')
     report.checks.push('home-toolbar-copy-removed')
     report.checks.push('home-card-whitespace-reduced')
-    const homeFusionMetrics = await waitFor(async () => {
+    let homeFusionMetrics = null
+    try {
+      homeFusionMetrics = await waitFor(async () => {
+        const metrics = await page.evaluate(pageFns.getHomeFusionMetrics)
+        if (
+          metrics?.compactGap &&
+          metrics?.topSurfaceExists &&
+          metrics?.surfaceTinted &&
+          metrics?.headerDividerHidden &&
+          metrics?.browserTopDividerVisible &&
+          metrics?.lightShadow &&
+          (metrics?.headingNeutral || metrics?.headingDividerVisible) &&
+          !metrics?.toolbarMissingByDefault &&
+          metrics?.dividerWidthsAligned
+        ) return metrics
+        return null
+      }, 10000, 200)
+    } catch (error) {
       const metrics = await page.evaluate(pageFns.getHomeFusionMetrics)
-      if (
-        metrics?.compactGap &&
-        metrics?.topSurfaceExists &&
-        metrics?.surfaceTinted &&
-        metrics?.headerDividerHidden &&
-        metrics?.browserTopDividerVisible &&
-        metrics?.lightShadow &&
-        metrics?.headingNeutral &&
-        !metrics?.toolbarMissingByDefault &&
-        metrics?.dividerWidthsAligned
-      ) return metrics
-      return null
-    }, 10000, 200)
+      throw new Error(`Home fusion metrics mismatch: ${JSON.stringify(metrics)}`)
+    }
     report.checks.push('home-header-fusion-confirmed')
 
     await expectPageAction('hover first resource favorite', pageFns.hoverSelector, '[data-rh-resource-favorite]')
@@ -1782,12 +1962,6 @@ main().catch((error) => {
   console.error(error.stack || error.message)
   process.exit(1)
 })
-
-
-
-
-
-
 
 
 

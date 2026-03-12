@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-Hans">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -133,6 +133,39 @@
       outline-offset: 2px;
     }
 
+    .rh-auth-text-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 2px 1px;
+      border-radius: 6px;
+      color: var(--brand-strong);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration-line: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+      text-decoration-color: color-mix(in srgb, var(--brand) 46%, transparent);
+      white-space: nowrap;
+      transition: color 150ms, text-decoration-color 150ms, background 150ms;
+    }
+
+    .rh-auth-text-link:hover {
+      color: var(--brand);
+      text-decoration-color: currentColor;
+    }
+
+    .rh-auth-text-link:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+      background: color-mix(in srgb, var(--brand-soft) 58%, transparent);
+    }
+
+    .rh-auth-text-link--strong {
+      font-weight: 800;
+      text-decoration-thickness: 1.5px;
+    }
+
     input::placeholder, textarea::placeholder {
       color: color-mix(in srgb, var(--text-tertiary) 92%, transparent);
       opacity: 1;
@@ -163,6 +196,7 @@
   <div id="root"></div>
 
   <!-- ① utils -->
+  <script type="text/babel" src="/utils/i18n.jsx"></script>
   <script type="text/babel" src="/utils/preferences.jsx"></script>
   <script type="text/babel" src="/utils/theme.jsx"></script>
   <script type="text/babel" src="/utils/helpers.jsx"></script>
@@ -197,6 +231,7 @@
   <script type="text/babel" src="/features/ResourceRow.jsx"></script>
   <script type="text/babel" src="/features/ResourceTimeline.jsx"></script>
   <script type="text/babel" src="/features/ResourceFormModal.jsx"></script>
+  <script type="text/babel" src="/features/BatchResourceModal.jsx"></script>
   <script type="text/babel" src="/features/ProfileModal.jsx"></script>
   <script type="text/babel" src="/features/ChangePasswordModal.jsx"></script>
 

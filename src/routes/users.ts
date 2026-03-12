@@ -5,10 +5,23 @@ import { db } from '../db/index.js'
 import { users, resources, emailConfig } from '../db/schema.js'
 import { eq, ne, and } from 'drizzle-orm'
 import { deliverMail } from '../services/mail.js'
+import {
+  getAdminResetPasswordMail,
+  getRequestLocale,
+  localizeFields,
+  localizeText,
+} from '../i18n.js'
 
-function sendError(reply: FastifyReply, status: number, error: string, code: string, fields?: Record<string, string>) {
-  const body: Record<string, unknown> = { success: false, error, code }
-  if (fields) body.fields = fields
+function sendError(
+  reply: FastifyReply,
+  locale: ReturnType<typeof getRequestLocale>,
+  status: number,
+  error: string,
+  code: string,
+  fields?: Record<string, string>
+) {
+  const body: Record<string, unknown> = { success: false, error: localizeText(locale, error), code }
+  if (fields) body.fields = localizeFields(locale, fields)
   reply.code(status).send(body)
 }
 
@@ -71,6 +84,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST / — admin: create user directly with provided password, no email sent
   fastify.post('/', { preHandler: fastify.requireAdmin }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { username, displayName, email, password, role } = req.body as {
       username: string
       displayName: string
@@ -85,14 +99,14 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
     if (!email || !validateEmail(email)) fields.email = '邮箱格式不正确'
     if (!password || !validatePassword(password)) fields.password = '密码须为8-64字符，且同时包含字母和数字'
     if (Object.keys(fields).length > 0) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
     }
 
     const existingUsername = db.select().from(users).where(eq(users.username, username)).get()
-    if (existingUsername) return sendError(reply, 422, '用户名已被占用', 'USERNAME_TAKEN')
+    if (existingUsername) return sendError(reply, locale, 422, '用户名已被占用', 'USERNAME_TAKEN')
 
     const existingEmail = db.select().from(users).where(eq(users.email, email)).get()
-    if (existingEmail) return sendError(reply, 422, '邮箱已被注册', 'EMAIL_TAKEN')
+    if (existingEmail) return sendError(reply, locale, 422, '邮箱已被注册', 'EMAIL_TAKEN')
 
     const passwordHash = await bcrypt.hash(password, 10)
     const now = Math.floor(Date.now() / 1000)
@@ -114,9 +128,10 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
   // PUT /:id — admin: edit user fields
   fastify.put('/:id', { preHandler: fastify.requireAdmin }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { id } = req.params as { id: string }
     const user = db.select().from(users).where(eq(users.id, id)).get()
-    if (!user) return sendError(reply, 404, '用户不存在', 'USER_NOT_FOUND')
+    if (!user) return sendError(reply, locale, 404, '用户不存在', 'USER_NOT_FOUND')
 
     const { displayName, email, role, status } = req.body as {
       displayName?: string
@@ -129,19 +144,19 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
     if (displayName !== undefined) {
       if (!validateDisplayName(displayName)) {
-        return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', { displayName: '显示名称须为1-30字符' })
+        return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', { displayName: '显示名称须为1-30字符' })
       }
       updates.displayName = displayName
     }
 
     if (email !== undefined) {
       if (!validateEmail(email)) {
-        return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', { email: '邮箱格式不正确' })
+        return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', { email: '邮箱格式不正确' })
       }
       const dup = db.select().from(users)
         .where(and(eq(users.email, email), ne(users.id, id)))
         .get()
-      if (dup) return sendError(reply, 422, '邮箱已被注册', 'EMAIL_TAKEN')
+      if (dup) return sendError(reply, locale, 422, '邮箱已被注册', 'EMAIL_TAKEN')
       updates.email = email
     }
 
@@ -158,35 +173,36 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
   // DELETE /:id — admin: transfer resources to admin then delete user
   fastify.delete('/:id', { preHandler: fastify.requireAdmin }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { id } = req.params as { id: string }
 
     if (id === req.user.userId) {
-      return sendError(reply, 422, '不能删除自身账号', 'CANNOT_DELETE_SELF')
+      return sendError(reply, locale, 422, '不能删除自身账号', 'CANNOT_DELETE_SELF')
     }
 
     const user = db.select().from(users).where(eq(users.id, id)).get()
-    if (!user) return sendError(reply, 404, '用户不存在', 'USER_NOT_FOUND')
+    if (!user) return sendError(reply, locale, 404, '用户不存在', 'USER_NOT_FOUND')
 
     // Transfer user's resources to the performing admin to avoid FK constraint
     db.update(resources).set({ ownerId: req.user.userId }).where(eq(resources.ownerId, id)).run()
     db.delete(users).where(eq(users.id, id)).run()
 
-    reply.send({ success: true, data: { message: '删除成功' } })
+    reply.send({ success: true, data: { message: localizeText(locale, '删除成功') } })
   })
 
   // POST /:id/reset-password — admin: auto-generate and send new password
   fastify.post('/:id/reset-password', { preHandler: fastify.requireAdmin }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { id } = req.params as { id: string }
     const user = db.select().from(users).where(eq(users.id, id)).get()
-    if (!user) return sendError(reply, 404, '用户不存在', 'USER_NOT_FOUND')
+    if (!user) return sendError(reply, locale, 404, '用户不存在', 'USER_NOT_FOUND')
 
     const newPassword = generateTempPassword()
     const passwordHash = await bcrypt.hash(newPassword, 10)
     db.update(users).set({ passwordHash }).where(eq(users.id, id)).run()
 
     const mailConfig = getEmailRow()
-    const subject = '管理员已重置您的密码'
-    const body = `您好 ${user.displayName}，\n\n管理员已重置您的账号密码。\n\n新密码：${newPassword}\n\n请登录后及时修改密码。`
+    const { subject, body } = getAdminResetPasswordMail(locale, user.displayName, newPassword)
     const preview = await deliverMail(user.email, subject, body, {
       smtpHost: mailConfig?.smtpHost ?? '',
       smtpPort: mailConfig?.smtpPort ?? 465,
@@ -197,7 +213,10 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
       smtpPassword: mailConfig?.smtpPassword ?? '',
     })
 
-    const response: Record<string, unknown> = { success: true, data: { message: '密码已重置' } }
+    const response: Record<string, unknown> = {
+      success: true,
+      data: { message: localizeText(locale, '密码已重置') },
+    }
     if (preview) response.emailPreview = preview
     reply.send(response)
   })

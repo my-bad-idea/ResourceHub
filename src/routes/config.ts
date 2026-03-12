@@ -3,10 +3,18 @@ import { db } from '../db/index.js'
 import { systemConfig, emailConfig, users } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
 import { deliverMail } from '../services/mail.js'
+import { getRequestLocale, getTestMail, localizeFields, localizeText } from '../i18n.js'
 
-function sendError(reply: FastifyReply, status: number, error: string, code: string, fields?: Record<string, string>) {
-  const body: Record<string, unknown> = { success: false, error, code }
-  if (fields) body.fields = fields
+function sendError(
+  reply: FastifyReply,
+  locale: ReturnType<typeof getRequestLocale>,
+  status: number,
+  error: string,
+  code: string,
+  fields?: Record<string, string>
+) {
+  const body: Record<string, unknown> = { success: false, error: localizeText(locale, error), code }
+  if (fields) body.fields = localizeFields(locale, fields)
   reply.code(status).send(body)
 }
 
@@ -170,7 +178,7 @@ const configRoutes: FastifyPluginAsync = async (fastify) => {
       success: true,
       data: {
         siteTitle: row?.siteTitle ?? '资源导航系统',
-        siteSubtitle: row?.siteSubtitle ?? '登录以访问企业资源导航',
+        siteSubtitle: row?.siteSubtitle ?? '统一管理与访问你的资源',
         logoUrl: row?.logoUrl ?? '',
         enableRegister: row?.enableRegister ?? true,
       },
@@ -183,11 +191,12 @@ const configRoutes: FastifyPluginAsync = async (fastify) => {
   })
 
   fastify.put('/system', { preHandler: fastify.requireAdmin }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const body = req.body as Record<string, unknown>
     const { fields, updates } = validateSystemConfig(body)
 
     if (Object.keys(fields).length > 0) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
     }
 
     if (Object.keys(updates).length > 0) {
@@ -205,11 +214,12 @@ const configRoutes: FastifyPluginAsync = async (fastify) => {
   })
 
   fastify.put('/email', { preHandler: fastify.requireAdmin }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const body = req.body as Record<string, unknown>
     const { fields, updates } = validateEmailConfig(body)
 
     if (Object.keys(fields).length > 0) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
     }
 
     if (Object.keys(updates).length > 0) {
@@ -222,12 +232,12 @@ const configRoutes: FastifyPluginAsync = async (fastify) => {
   })
 
   fastify.post('/email/test', { preHandler: fastify.requireAdmin }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const admin = db.select().from(users).where(eq(users.id, req.user.userId)).get()
-    if (!admin) return sendError(reply, 401, 'token 无效', 'TOKEN_INVALID')
+    if (!admin) return sendError(reply, locale, 401, 'token 无效', 'TOKEN_INVALID')
 
     const mailConfig = getEmailRow()
-    const subject = '邮件服务测试'
-    const body = `您好 ${admin.displayName}，\n\n这是一封测试邮件，确认邮件服务配置正常。`
+    const { subject, body } = getTestMail(locale, admin.displayName)
     const preview = await deliverMail(admin.email, subject, body, {
       smtpHost: mailConfig?.smtpHost ?? '',
       smtpPort: mailConfig?.smtpPort ?? 465,
@@ -238,7 +248,10 @@ const configRoutes: FastifyPluginAsync = async (fastify) => {
       smtpPassword: mailConfig?.smtpPassword ?? '',
     })
 
-    const response: Record<string, unknown> = { success: true, data: { message: '测试邮件已发送' } }
+    const response: Record<string, unknown> = {
+      success: true,
+      data: { message: localizeText(locale, '测试邮件已发送') },
+    }
     if (preview) response.emailPreview = preview
     reply.send(response)
   })

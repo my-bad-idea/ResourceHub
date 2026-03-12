@@ -5,6 +5,7 @@ const AppStateContext = createContext(null);
 const AppDispatchContext = createContext(null);
 
 const initialUiPreferences = window.uiPreferences?.getInitialUiState?.() || {
+  locale: window.i18n?.detectBrowserLocale?.() || 'zh-Hans',
   theme: localStorage.getItem('rh_theme') || 'system',
   viewMode: 'card',
   sortBy: 'hot',
@@ -14,6 +15,7 @@ const initialUiPreferences = window.uiPreferences?.getInitialUiState?.() || {
 function persistUiPreferencesForState(state) {
   if (!window.uiPreferences?.savePreferencesForActor) return;
   window.uiPreferences.savePreferencesForActor(state.currentUser || null, {
+    locale: state.locale,
     theme: state.theme,
     viewMode: state.viewMode,
     sortBy: state.sortBy,
@@ -31,6 +33,7 @@ const initialState = {
   favorites: [],
   history: [],
   mine: [],
+  locale: initialUiPreferences.locale,
   theme: initialUiPreferences.theme,
   searchQuery: '',
   selectedCategory: null,
@@ -49,11 +52,13 @@ function appReducer(state, action) {
     case 'LOGIN': {
       sessionStorage.setItem('rh_token', action.token);
       const authenticatedPreferences = window.uiPreferences?.getUserPreferences?.(action.user?.id) || initialUiPreferences;
+      if (window.i18n?.applyLocale) window.i18n.applyLocale(authenticatedPreferences.locale);
       if (window.applyTheme) window.applyTheme(authenticatedPreferences.theme);
       return {
         ...state,
         currentUser: action.user,
         token: action.token,
+        locale: authenticatedPreferences.locale,
         theme: authenticatedPreferences.theme,
         viewMode: authenticatedPreferences.viewMode,
         sortBy: authenticatedPreferences.sortBy,
@@ -65,6 +70,7 @@ function appReducer(state, action) {
     case 'LOGOUT': {
       sessionStorage.removeItem('rh_token');
       const guestPreferences = window.uiPreferences?.getGuestPreferences?.() || initialUiPreferences;
+      if (window.i18n?.applyLocale) window.i18n.applyLocale(guestPreferences.locale);
       if (window.applyTheme) window.applyTheme(guestPreferences.theme);
       return {
         ...state,
@@ -73,6 +79,7 @@ function appReducer(state, action) {
         favorites: [],
         history: [],
         mine: [],
+        locale: guestPreferences.locale,
         theme: guestPreferences.theme,
         viewMode: guestPreferences.viewMode,
         sortBy: guestPreferences.sortBy,
@@ -173,6 +180,13 @@ function appReducer(state, action) {
       return nextThemeState;
     }
 
+    case 'SET_LOCALE': {
+      if (window.i18n?.applyLocale) window.i18n.applyLocale(action.locale);
+      const nextLocaleState = { ...state, locale: action.locale };
+      persistUiPreferencesForState(nextLocaleState);
+      return nextLocaleState;
+    }
+
     case 'SET_SEARCH':
       return { ...state, searchQuery: action.query };
 
@@ -233,6 +247,7 @@ function appReducer(state, action) {
 
     case 'HYDRATE_UI_PREFERENCES': {
       const basePreferences = {
+        locale: state.locale,
         theme: state.theme,
         viewMode: state.viewMode,
         sortBy: state.sortBy,
@@ -243,9 +258,11 @@ function appReducer(state, action) {
         { ...basePreferences, ...(action.preferences || {}) },
         basePreferences,
       ) || { ...basePreferences, ...(action.preferences || {}) };
+      if (window.i18n?.applyLocale) window.i18n.applyLocale(nextHydratedPreferences.locale);
       if (window.applyTheme) window.applyTheme(nextHydratedPreferences.theme);
       return {
         ...state,
+        locale: nextHydratedPreferences.locale,
         theme: nextHydratedPreferences.theme,
         viewMode: nextHydratedPreferences.viewMode,
         sortBy: nextHydratedPreferences.sortBy,

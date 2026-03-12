@@ -1,6 +1,7 @@
 function AdminEmail() {
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
+  const { t } = window.useI18n();
   const { Save, Loader, Send, Eye, EyeOff } = lucide;
 
   const [form, setForm] = React.useState({
@@ -17,6 +18,8 @@ function AdminEmail() {
   const [saving, setSaving] = React.useState(false);
   const [testing, setTesting] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
+  const localizableConfigValues = new Set(['资源导航系统']);
+  const getLocalizedConfigValue = (value) => (localizableConfigValues.has(value) ? t(value) : value);
 
   React.useEffect(() => {
     async function load() {
@@ -256,7 +259,7 @@ function AdminEmail() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
             <div style={fieldStyle}>
               <label style={labelStyle}>发件人名称</label>
-              <input className="rh-admin-input" value={form.fromName} onChange={e => setForm(f => ({ ...f, fromName: e.target.value }))}
+              <input className="rh-admin-input" value={getLocalizedConfigValue(form.fromName)} onChange={e => setForm(f => ({ ...f, fromName: e.target.value }))}
                 style={inputStyle('fromName')} placeholder="资源导航系统" disabled={saving} />
               {errors.fromName && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.fromName}</div>}
             </div>

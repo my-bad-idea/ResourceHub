@@ -3,11 +3,18 @@ import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db/index.js'
 import { categories, resources } from '../db/schema.js'
 import { eq, ne, and, or, sql } from 'drizzle-orm'
+import { getRequestLocale, localizeText } from '../i18n.js'
 
 const COLOR_POOL = ['#5856D6', '#FF9500', '#34C759', '#FF3B30', '#0071E3', '#FF2D55', '#AF52DE', '#00C7BE']
 
-function sendError(reply: FastifyReply, status: number, error: string, code: string) {
-  reply.code(status).send({ success: false, error, code })
+function sendError(
+  reply: FastifyReply,
+  locale: ReturnType<typeof getRequestLocale>,
+  status: number,
+  error: string,
+  code: string
+) {
+  reply.code(status).send({ success: false, error: localizeText(locale, error), code })
 }
 
 function parseOptionalUser(
@@ -62,13 +69,14 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST / — authenticate (any logged-in user)
   fastify.post('/', { preHandler: fastify.authenticate }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { name } = req.body as { name?: string }
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR')
     }
 
     const existing = db.select().from(categories).where(eq(categories.name, name)).get()
-    if (existing) return sendError(reply, 422, '类别名称已存在', 'CATEGORY_NAME_TAKEN')
+    if (existing) return sendError(reply, locale, 422, '类别名称已存在', 'CATEGORY_NAME_TAKEN')
 
     const color = COLOR_POOL[Math.floor(Math.random() * COLOR_POOL.length)]
     const now = Math.floor(Date.now() / 1000)
@@ -81,9 +89,10 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // PUT /:id — admin
   fastify.put('/:id', { preHandler: fastify.requireAdmin }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { id } = req.params as { id: string }
     const cat = db.select().from(categories).where(eq(categories.id, id)).get()
-    if (!cat) return sendError(reply, 404, '类别不存在', 'CATEGORY_NOT_FOUND')
+    if (!cat) return sendError(reply, locale, 404, '类别不存在', 'CATEGORY_NOT_FOUND')
 
     const { name, color } = req.body as { name?: string; color?: string }
     const updates: Partial<typeof categories.$inferInsert> = {}
@@ -92,7 +101,7 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
       const dup = db.select().from(categories)
         .where(and(eq(categories.name, name), ne(categories.id, id)))
         .get()
-      if (dup) return sendError(reply, 422, '类别名称已存在', 'CATEGORY_NAME_TAKEN')
+      if (dup) return sendError(reply, locale, 422, '类别名称已存在', 'CATEGORY_NAME_TAKEN')
       updates.name = name
     }
     if (color !== undefined) updates.color = color
@@ -108,16 +117,20 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // DELETE /:id — admin
   fastify.delete('/:id', { preHandler: fastify.requireAdmin }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { id } = req.params as { id: string }
     const cat = db.select().from(categories).where(eq(categories.id, id)).get()
-    if (!cat) return sendError(reply, 404, '类别不存在', 'CATEGORY_NOT_FOUND')
+    if (!cat) return sendError(reply, locale, 404, '类别不存在', 'CATEGORY_NOT_FOUND')
 
     const countRow = db.select({ count: sql<number>`count(*)` }).from(resources)
       .where(eq(resources.categoryId, id)).get()
     const affectedResources = countRow?.count ?? 0
 
     db.delete(categories).where(eq(categories.id, id)).run()
-    reply.send({ success: true, data: { message: '删除成功', affectedResources } })
+    reply.send({
+      success: true,
+      data: { message: localizeText(locale, '删除成功'), affectedResources },
+    })
   })
 }
 

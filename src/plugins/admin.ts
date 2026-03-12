@@ -1,5 +1,6 @@
 import fp from 'fastify-plugin'
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
+import { getRequestLocale, localizeText } from '../i18n.js'
 
 const adminPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.decorate('requireAdmin', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -7,7 +8,12 @@ const adminPlugin: FastifyPluginAsync = async (fastify) => {
     if (reply.sent) return
 
     if (request.user.role !== 'admin') {
-      reply.code(403).send({ success: false, error: '权限不足', code: 'PERMISSION_DENIED' })
+      const locale = getRequestLocale(request)
+      reply.code(403).send({
+        success: false,
+        error: localizeText(locale, '权限不足'),
+        code: 'PERMISSION_DENIED',
+      })
     }
   })
 }

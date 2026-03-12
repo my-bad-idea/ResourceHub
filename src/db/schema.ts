@@ -59,7 +59,7 @@ export const visitHourly = sqliteTable('visit_hourly', {
 export const systemConfig = sqliteTable('system_config', {
   id:                   text('id').primaryKey().default('default'),
   siteTitle:            text('site_title').notNull().default('资源导航系统'),
-  siteSubtitle:         text('site_subtitle').notNull().default('登录以访问企业资源导航'),
+  siteSubtitle:         text('site_subtitle').notNull().default('统一管理与访问你的资源'),
   logoUrl:              text('logo_url').default(''),
   tokenExpiry:          integer('token_expiry').notNull().default(60),
   resetTokenExpiry:     integer('reset_token_expiry').notNull().default(60),

@@ -2,24 +2,35 @@ const UI_PREFERENCES_KEY = 'rh_ui_preferences_v1';
 const LEGACY_THEME_KEY = 'rh_theme';
 
 const DEFAULT_UI_PREFERENCES = Object.freeze({
+  locale: 'zh-Hans',
   theme: 'system',
   viewMode: 'card',
   sortBy: 'hot',
   quickAccessFilter: null,
 });
 
+const VALID_LOCALES = new Set(['zh-Hans', 'zh-Hant', 'en', 'ja']);
 const VALID_THEMES = new Set(['light', 'dark', 'system']);
 const VALID_VIEW_MODES = new Set(['card', 'list', 'timeline']);
 const VALID_SORTS = new Set(['hot', 'created', 'updated']);
 const VALID_QUICK_ACCESS = new Set(['favorites', 'history', 'mine']);
 
+function getDefaultLocale() {
+  return window.i18n?.detectBrowserLocale?.() || DEFAULT_UI_PREFERENCES.locale;
+}
+
 function cloneDefaultUiPreferences() {
   return {
+    locale: getDefaultLocale(),
     theme: DEFAULT_UI_PREFERENCES.theme,
     viewMode: DEFAULT_UI_PREFERENCES.viewMode,
     sortBy: DEFAULT_UI_PREFERENCES.sortBy,
     quickAccessFilter: DEFAULT_UI_PREFERENCES.quickAccessFilter,
   };
+}
+
+function sanitizeLocale(locale, fallback = getDefaultLocale()) {
+  return VALID_LOCALES.has(locale) ? locale : fallback;
 }
 
 function sanitizeTheme(theme, fallback = DEFAULT_UI_PREFERENCES.theme) {
@@ -44,6 +55,7 @@ function sanitizePreferenceRecord(record = {}, options = {}) {
   const fallback = options.fallback || cloneDefaultUiPreferences();
   const allowQuickAccess = Boolean(options.allowQuickAccess);
   return {
+    locale: sanitizeLocale(record.locale, fallback.locale),
     theme: sanitizeTheme(record.theme, fallback.theme),
     viewMode: sanitizeViewMode(record.viewMode, fallback.viewMode),
     sortBy: sanitizeSortBy(record.sortBy, fallback.sortBy),
@@ -179,6 +191,7 @@ function savePreferencesForActor(user, preferences) {
 
 function extractPreferencesFromState(state) {
   return sanitizePreferenceRecord({
+    locale: state?.locale,
     theme: state?.theme,
     viewMode: state?.viewMode,
     sortBy: state?.sortBy,

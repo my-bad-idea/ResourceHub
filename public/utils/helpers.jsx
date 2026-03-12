@@ -71,18 +71,22 @@ function formatDate(timestamp) {
 
   const date = new Date(seconds * 1000);
   const now = new Date();
+  const locale = window.i18n?.getCurrentLocale?.() || 'zh-Hans';
+  const intlLocale = window.i18n?.getIntlLocale?.(locale) || 'zh-CN';
 
   if (date.toDateString() === now.toDateString()) {
-    return '今天';
+    return window.i18n?.translateText?.(locale, '今天') || '今天';
   }
 
-  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+  return date.toLocaleDateString(intlLocale, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function formatMonth(timestamp) {
   if (!timestamp) return '';
   const date = new Date(timestamp * 1000);
-  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' });
+  const locale = window.i18n?.getCurrentLocale?.() || 'zh-Hans';
+  const intlLocale = window.i18n?.getIntlLocale?.(locale) || 'zh-CN';
+  return date.toLocaleDateString(intlLocale, { year: 'numeric', month: 'long' });
 }
 
 function truncate(str, maxLen) {

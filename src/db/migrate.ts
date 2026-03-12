@@ -71,7 +71,7 @@ export function runMigrations(): void {
     CREATE TABLE IF NOT EXISTS system_config (
       id TEXT PRIMARY KEY DEFAULT 'default',
       site_title TEXT NOT NULL DEFAULT '资源导航系统',
-      site_subtitle TEXT NOT NULL DEFAULT '登录以访问企业资源导航',
+      site_subtitle TEXT NOT NULL DEFAULT '统一管理与访问你的资源',
       logo_url TEXT DEFAULT '',
       token_expiry INTEGER NOT NULL DEFAULT 60,
       reset_token_expiry INTEGER NOT NULL DEFAULT 60,
@@ -141,7 +141,7 @@ export function seedMockData(adminId: string): void {
     { name: 'Dribbble',          url: 'https://dribbble.com',              categoryId: 'cat-002', visibility: 'public'  as const, visitCount: 40,  tags: ['设计'] },
     { name: 'Postman',           url: 'https://postman.com',               categoryId: 'cat-001', visibility: 'public'  as const, visitCount: 50,  tags: ['后端', 'API'] },
     { name: 'Obsidian',          url: 'https://obsidian.md',               categoryId: 'cat-004', visibility: 'public'  as const, visitCount: 30,  tags: ['效率'] },
-    { name: '内部文档（私有示例）', url: 'http://internal.example.com',      categoryId: 'cat-003', visibility: 'private' as const, visitCount: 5,   tags: ['文档'] },
+    { name: '私有资源（示例）',     url: 'https://private.example.com',      categoryId: 'cat-003', visibility: 'private' as const, visitCount: 5,   tags: ['文档'] },
   ]
 
   for (const r of resourceData) {

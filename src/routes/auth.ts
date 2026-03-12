@@ -7,6 +7,14 @@ import { eq } from 'drizzle-orm'
 import { seedMockData } from '../db/migrate.js'
 import { createResetToken, validateResetToken, markTokenUsed } from '../services/token.js'
 import { deliverMail } from '../services/mail.js'
+import {
+  getForgotPasswordMail,
+  getRegisterMail,
+  getRequestLocale,
+  getResetTokenErrorMessage,
+  localizeFields,
+  localizeText,
+} from '../i18n.js'
 
 // ── Validators ──────────────────────────────────────────────────────────────
 
@@ -37,13 +45,14 @@ function generateTempPassword(): string {
 
 function sendError(
   reply: FastifyReply,
+  locale: string,
   status: number,
   error: string,
   code: string,
   fields?: Record<string, string>
 ) {
-  const body: Record<string, unknown> = { success: false, error, code }
-  if (fields) body.fields = fields
+  const body: Record<string, unknown> = { success: false, error: localizeText(locale as any, error), code }
+  if (fields) body.fields = localizeFields(locale as any, fields)
   reply.code(status).send(body)
 }
 
@@ -80,9 +89,10 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /setup
   fastify.post('/setup', async (req, reply) => {
+    const locale = getRequestLocale(req)
     const row = db.select().from(initialized).where(eq(initialized.id, 'default')).get()
     if (row?.done) {
-      return sendError(reply, 403, '系统已初始化', 'SYSTEM_ALREADY_INITIALIZED')
+      return sendError(reply, locale, 403, '系统已初始化', 'SYSTEM_ALREADY_INITIALIZED')
     }
 
     const body = req.body as Record<string, unknown>
@@ -97,7 +107,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     if (!password || !validatePassword(password)) fields.password = '密码须为8-64字符，且同时包含字母和数字'
     if (password !== confirmPassword) fields.confirmPassword = '两次密码不一致'
     if (Object.keys(fields).length > 0) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
     }
 
     const adminId = uuidv4()
@@ -123,20 +133,21 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     db.update(initialized).set({ done: true }).where(eq(initialized.id, 'default')).run()
 
-    reply.send({ success: true, data: { message: '初始化完成' } })
+    reply.send({ success: true, data: { message: localizeText(locale, '初始化完成') } })
   })
 
   // POST /login
   fastify.post('/login', async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { username, password } = req.body as { username: string; password: string }
 
     const user = db.select().from(users).where(eq(users.username, username)).get()
-    if (!user) return sendError(reply, 401, '用户名或密码错误', 'INVALID_CREDENTIALS')
+    if (!user) return sendError(reply, locale, 401, '用户名或密码错误', 'INVALID_CREDENTIALS')
 
-    if (user.status === 'disabled') return sendError(reply, 403, '账号已被禁用', 'ACCOUNT_DISABLED')
+    if (user.status === 'disabled') return sendError(reply, locale, 403, '账号已被禁用', 'ACCOUNT_DISABLED')
 
     const match = await bcrypt.compare(password, user.passwordHash)
-    if (!match) return sendError(reply, 401, '用户名或密码错误', 'INVALID_CREDENTIALS')
+    if (!match) return sendError(reply, locale, 401, '用户名或密码错误', 'INVALID_CREDENTIALS')
 
     const config = getSystemConfig()
     const tokenExpiry = config?.tokenExpiry ?? 60
@@ -148,9 +159,10 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /register
   fastify.post('/register', async (req, reply) => {
+    const locale = getRequestLocale(req)
     const config = getSystemConfig()
     if (!config?.enableRegister) {
-      return sendError(reply, 403, '注册功能已关闭', 'REGISTER_DISABLED')
+      return sendError(reply, locale, 403, '注册功能已关闭', 'REGISTER_DISABLED')
     }
 
     const { username, displayName, email } = req.body as { username: string; displayName: string; email: string }
@@ -160,7 +172,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     if (!displayName || !validateDisplayName(displayName)) fields.displayName = '显示名称须为1-30字符'
     if (!email || !validateEmail(email)) fields.email = '邮箱格式不正确'
     if (Object.keys(fields).length > 0) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
     }
 
     // Email domain restriction
@@ -168,15 +180,15 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       const domain = email.split('@')[1]
       const whitelist = config.emailDomainWhitelist.split(',').map(d => d.trim())
       if (!whitelist.includes(domain)) {
-        return sendError(reply, 422, '邮箱域名不在白名单', 'EMAIL_DOMAIN_NOT_ALLOWED')
+        return sendError(reply, locale, 422, '邮箱域名不在白名单', 'EMAIL_DOMAIN_NOT_ALLOWED')
       }
     }
 
     const existingUsername = db.select().from(users).where(eq(users.username, username)).get()
-    if (existingUsername) return sendError(reply, 422, '用户名已被占用', 'USERNAME_TAKEN')
+    if (existingUsername) return sendError(reply, locale, 422, '用户名已被占用', 'USERNAME_TAKEN')
 
     const existingEmail = db.select().from(users).where(eq(users.email, email)).get()
-    if (existingEmail) return sendError(reply, 422, '邮箱已被注册', 'EMAIL_TAKEN')
+    if (existingEmail) return sendError(reply, locale, 422, '邮箱已被注册', 'EMAIL_TAKEN')
 
     const tempPassword = generateTempPassword()
     const passwordHash = await bcrypt.hash(tempPassword, 10)
@@ -195,8 +207,8 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     db.insert(users).values(newUser).run()
 
     const mailConfig = getEmailConfig()
-    const subject = '欢迎注册，您的初始密码'
-    const body = `您好 ${displayName}，\n\n您的账号已创建成功。\n\n用户名：${username}\n初始密码：${tempPassword}\n\n请登录后及时修改密码。`
+    const mailCopy = getRegisterMail(locale, displayName, username, tempPassword)
+    const { subject, body } = mailCopy
     const preview = await deliverMail(email, subject, body, {
       smtpHost: mailConfig?.smtpHost ?? '',
       smtpPort: mailConfig?.smtpPort ?? 465,
@@ -207,16 +219,17 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       smtpPassword: mailConfig?.smtpPassword ?? '',
     })
 
-    const response: Record<string, unknown> = { success: true, data: { message: '注册成功' } }
+    const response: Record<string, unknown> = { success: true, data: { message: localizeText(locale, '注册成功') } }
     if (preview) response.emailPreview = preview
     reply.send(response)
   })
 
   // POST /forgot-password
   fastify.post('/forgot-password', async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { email } = req.body as { email: string }
 
-    const defaultResponse = { success: true, data: { message: '若邮箱已注册，重置链接已发送' } }
+    const defaultResponse = { success: true, data: { message: localizeText(locale, '若邮箱已注册，重置链接已发送') } }
 
     if (!email || !validateEmail(email)) {
       return reply.send(defaultResponse)
@@ -234,8 +247,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     const config = getSystemConfig()
     const expiryMinutes = config?.resetTokenExpiry ?? 60
 
-    const subject = '密码重置请求'
-    const body = `您好 ${user.displayName}，\n\n您请求重置密码。请点击以下链接完成重置（${expiryMinutes} 分钟内有效）：\n\n${resetLink}\n\n若非本人操作，请忽略此邮件。`
+    const { subject, body } = getForgotPasswordMail(locale, user.displayName, resetLink, expiryMinutes)
 
     const mailConfig = getEmailConfig()
     const preview = await deliverMail(email, subject, body, {
@@ -255,54 +267,57 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /reset-password
   fastify.post('/reset-password', async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { token, newPassword, confirmPassword } = req.body as {
       token: string; newPassword: string; confirmPassword: string
     }
 
     const result = validateResetToken(token)
     if (!result.valid) {
-      return sendError(reply, 422, '重置令牌无效', result.error!)
+      return sendError(reply, locale, 422, getResetTokenErrorMessage(locale, result.error!), result.error!)
     }
 
     if (newPassword !== confirmPassword) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', { confirmPassword: '两次密码不一致' })
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', { confirmPassword: '两次密码不一致' })
     }
     if (!validatePassword(newPassword)) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', { newPassword: '密码须为8-64字符，且同时包含字母和数字' })
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', { newPassword: '密码须为8-64字符，且同时包含字母和数字' })
     }
 
     const user = db.select().from(users).where(eq(users.email, result.email!)).get()
-    if (!user) return sendError(reply, 422, '重置令牌无效', 'RESET_TOKEN_INVALID')
+    if (!user) return sendError(reply, locale, 422, getResetTokenErrorMessage(locale, 'RESET_TOKEN_INVALID'), 'RESET_TOKEN_INVALID')
 
     const passwordHash = await bcrypt.hash(newPassword, 10)
     db.update(users).set({ passwordHash }).where(eq(users.id, user.id)).run()
     markTokenUsed(token)
 
-    reply.send({ success: true, data: { message: '密码已重置' } })
+    reply.send({ success: true, data: { message: localizeText(locale, '密码已重置') } })
   })
 
   // GET /me
   fastify.get('/me', { preHandler: fastify.authenticate }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const user = db.select().from(users).where(eq(users.id, req.user.userId)).get()
-    if (!user) return sendError(reply, 401, 'token 无效', 'TOKEN_INVALID')
+    if (!user) return sendError(reply, locale, 401, 'token 无效', 'TOKEN_INVALID')
     reply.send({ success: true, data: formatUser(user) })
   })
 
   // PUT /me
   fastify.put('/me', { preHandler: fastify.authenticate }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { displayName, email } = req.body as { displayName?: string; email?: string }
 
     const fields: Record<string, string> = {}
     if (displayName !== undefined && !validateDisplayName(displayName)) fields.displayName = '显示名称须为1-30字符'
     if (email !== undefined && !validateEmail(email)) fields.email = '邮箱格式不正确'
     if (Object.keys(fields).length > 0) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', fields)
     }
 
     if (email) {
       const existing = db.select().from(users).where(eq(users.email, email)).get()
       if (existing && existing.id !== req.user.userId) {
-        return sendError(reply, 422, '邮箱已被注册', 'EMAIL_TAKEN')
+        return sendError(reply, locale, 422, '邮箱已被注册', 'EMAIL_TAKEN')
       }
     }
 
@@ -318,30 +333,31 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   // PUT /me/password
   fastify.put('/me/password', { preHandler: fastify.authenticate }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { currentPassword, newPassword, confirmPassword } = req.body as {
       currentPassword: string; newPassword: string; confirmPassword: string
     }
 
     const user = db.select().from(users).where(eq(users.id, req.user.userId)).get()
-    if (!user) return sendError(reply, 401, 'token 无效', 'TOKEN_INVALID')
+    if (!user) return sendError(reply, locale, 401, 'token 无效', 'TOKEN_INVALID')
 
     const match = await bcrypt.compare(currentPassword, user.passwordHash)
-    if (!match) return sendError(reply, 422, '当前密码错误', 'WRONG_PASSWORD')
+    if (!match) return sendError(reply, locale, 422, '当前密码错误', 'WRONG_PASSWORD')
 
     const sameAsOld = await bcrypt.compare(newPassword, user.passwordHash)
-    if (sameAsOld) return sendError(reply, 422, '新旧密码不能相同', 'SAME_PASSWORD')
+    if (sameAsOld) return sendError(reply, locale, 422, '新旧密码不能相同', 'SAME_PASSWORD')
 
     if (newPassword !== confirmPassword) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', { confirmPassword: '两次密码不一致' })
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', { confirmPassword: '两次密码不一致' })
     }
     if (!validatePassword(newPassword)) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR', { newPassword: '密码须为8-64字符，且同时包含字母和数字' })
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', { newPassword: '密码须为8-64字符，且同时包含字母和数字' })
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10)
     db.update(users).set({ passwordHash }).where(eq(users.id, user.id)).run()
 
-    reply.send({ success: true, data: { message: '密码已修改' } })
+    reply.send({ success: true, data: { message: localizeText(locale, '密码已修改') } })
   })
 }
 

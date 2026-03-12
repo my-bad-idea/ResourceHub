@@ -3,11 +3,14 @@ function HomePage({ pageType = 'overview' } = {}) {
   const state = window.useAppState();
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
+  const i18n = window.useI18n ? window.useI18n() : null;
+  const t = i18n?.t || ((text) => text);
   const viewportWidth = window.useViewportWidth();
   const { navigate } = window.useRouter();
   const { LayoutGrid, List, Clock, Plus, ChevronDown, Heart, FileText, Menu, ArrowLeft, X } = lucide;
 
   const [showResourceModal, setShowResourceModal] = React.useState(false);
+  const [showBatchModal, setShowBatchModal] = React.useState(false);
   const [editResource, setEditResource] = React.useState(null);
   const [showMobileSidebar, setShowMobileSidebar] = React.useState(false);
   const [showSortMenu, setShowSortMenu] = React.useState(false);
@@ -188,9 +191,9 @@ function HomePage({ pageType = 'overview' } = {}) {
   const compactQuery = trimmedQuery.length > 16 ? `${trimmedQuery.slice(0, 16)}...` : trimmedQuery;
   const selectedTagsList = selectedTags || [];
   const headingTitleMap = {
-    favorites: '我的收藏',
-    history: '最近访问',
-    mine: '我创建的',
+    favorites: t('我的收藏'),
+    history: t('最近访问'),
+    mine: t('我创建的'),
   };
   const totalResourceCount = resources.length;
   const mineResourceCount = currentUser ? mine.length : 0;
@@ -461,6 +464,12 @@ function HomePage({ pageType = 'overview' } = {}) {
   const openCreate = () => {
     setEditResource(null);
     setShowResourceModal(true);
+  };
+
+  const openBatch = () => {
+    setShowResourceModal(false);
+    setEditResource(null);
+    setShowBatchModal(true);
   };
 
   React.useEffect(() => {
@@ -1155,6 +1164,24 @@ function HomePage({ pageType = 'overview' } = {}) {
         isOpen={showResourceModal}
         onClose={handleModalClose}
         resource={editResource}
+        onOpenBatch={currentUser ? openBatch : undefined}
+      />
+      <window.BatchResourceModal
+        isOpen={showBatchModal}
+        onClose={async () => {
+          setShowBatchModal(false);
+          const [categoriesResponse, tagsResponse] = await Promise.all([
+            request('/api/categories'),
+            request('/api/tags'),
+          ]);
+          if (categoriesResponse.ok) {
+            dispatch({ type: 'SET_CATEGORIES', categories: categoriesResponse.data.data || [] });
+          }
+          if (tagsResponse.ok) {
+            const nextTags = (tagsResponse.data.data || []).map((item) => (typeof item === 'string' ? item : item.tag)).filter(Boolean);
+            dispatch({ type: 'SET_TAGS', tags: nextTags });
+          }
+        }}
       />
 
       {isResultsMode && (
@@ -1549,13 +1576,13 @@ function HomeOverview({
                     padding: '13px',
                     borderRadius: '16px',
                     ...((isEmptyEntry ? quickAccessEmptySurfaceStyle : quickAccessSurfaceStyle)),
-                    border: isEmptyEntry
-                      ? quickAccessEmptySurfaceStyle.border
-                      : (hoveredQuickAccessKey === entry.key
-                        ? (isLightTheme
-                          ? `1px solid color-mix(in srgb, ${entry.accent || 'var(--brand)'} 42%, var(--control-border))`
-                          : `1px solid color-mix(in srgb, ${entry.accent || 'var(--brand)'} 48%, var(--border-strong))`)
-                        : quickAccessSurfaceStyle.border),
+                    border: hoveredQuickAccessKey === entry.key
+                      ? (isLightTheme
+                        ? `1px solid color-mix(in srgb, ${entry.accent || 'var(--brand)'} 42%, var(--control-border))`
+                        : `1px solid color-mix(in srgb, ${entry.accent || 'var(--brand)'} 48%, var(--border-strong))`)
+                      : isEmptyEntry
+                        ? quickAccessEmptySurfaceStyle.border
+                        : quickAccessSurfaceStyle.border,
                     background: isEmptyEntry
                       ? quickAccessEmptySurfaceStyle.background
                       : (isLightTheme
@@ -1565,8 +1592,8 @@ function HomeOverview({
                     gap: '6px',
                     textAlign: 'left',
                     cursor: 'pointer',
-                    transform: !isEmptyEntry && hoveredQuickAccessKey === entry.key ? interactiveCardLift : 'translateY(0)',
-                    boxShadow: !isEmptyEntry && hoveredQuickAccessKey === entry.key
+                    transform: hoveredQuickAccessKey === entry.key ? interactiveCardLift : 'translateY(0)',
+                    boxShadow: hoveredQuickAccessKey === entry.key
                       ? (isLightTheme
                         ? `0 14px 26px color-mix(in srgb, ${entry.accent || 'var(--brand)'} 20%, transparent)`
                         : `0 16px 30px color-mix(in srgb, ${entry.accent || 'var(--brand)'} 22%, transparent)`)

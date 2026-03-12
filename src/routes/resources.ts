@@ -4,11 +4,18 @@ import { db } from '../db/index.js'
 import { resources, resourceTags, favorites, visitHistory, visitHourly, categories, users } from '../db/schema.js'
 import { eq, and, or, sql, inArray, like, asc, desc } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
+import { getRequestLocale, localizeText } from '../i18n.js'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function sendError(reply: FastifyReply, status: number, error: string, code: string) {
-  reply.code(status).send({ success: false, error, code })
+function sendError(
+  reply: FastifyReply,
+  locale: ReturnType<typeof getRequestLocale>,
+  status: number,
+  error: string,
+  code: string
+) {
+  reply.code(status).send({ success: false, error: localizeText(locale, error), code })
 }
 
 function validateUrl(v: string): boolean {
@@ -233,6 +240,7 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ── POST / — create resource ────────────────────────────────────────────────
   fastify.post('/', { preHandler: fastify.authenticate }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const body = req.body as Record<string, unknown>
     const { name, url, categoryId, visibility, logoUrl, description, tags, enabled } = body as {
       name: string
@@ -247,24 +255,24 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Validate required fields
     if (!name || typeof name !== 'string' || name.trim().length < 1 || name.trim().length > 50) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR')
     }
     if (!url || !validateUrl(url)) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR')
     }
     if (logoUrl && logoUrl !== '' && !validateUrl(logoUrl)) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR')
     }
     if (description !== undefined && description.length > 200) {
-      return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR')
     }
     if (tags !== undefined) {
       if (!Array.isArray(tags) || tags.length > 10) {
-        return sendError(reply, 422, '标签最多 10 个', 'VALIDATION_ERROR')
+        return sendError(reply, locale, 422, '标签最多 10 个', 'VALIDATION_ERROR')
       }
       for (const tag of tags) {
         if (typeof tag !== 'string' || tag.length < 1 || tag.length > 20 || /\s/.test(tag)) {
-          return sendError(reply, 422, '标签格式不正确（1-20字符，不可含空格）', 'VALIDATION_ERROR')
+          return sendError(reply, locale, 422, '标签格式不正确（1-20字符，不可含空格）', 'VALIDATION_ERROR')
         }
       }
     }
@@ -272,7 +280,7 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     // Validate categoryId if provided
     if (categoryId) {
       const cat = db.select().from(categories).where(eq(categories.id, categoryId)).get()
-      if (!cat) return sendError(reply, 422, '类别不存在', 'CATEGORY_NOT_FOUND')
+      if (!cat) return sendError(reply, locale, 422, '类别不存在', 'CATEGORY_NOT_FOUND')
     }
 
     const now = Math.floor(Date.now() / 1000)
@@ -394,13 +402,14 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ── PUT /:id — edit resource (owner or admin) ───────────────────────────────
   fastify.put('/:id', { preHandler: fastify.authenticate }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { id } = req.params as { id: string }
     const { userId, role } = req.user
 
     const resource = db.select().from(resources).where(eq(resources.id, id)).get()
-    if (!resource) return sendError(reply, 404, '资源不存在', 'RESOURCE_NOT_FOUND')
+    if (!resource) return sendError(reply, locale, 404, '资源不存在', 'RESOURCE_NOT_FOUND')
     if (role !== 'admin' && resource.ownerId !== userId) {
-      return sendError(reply, 403, '权限不足', 'PERMISSION_DENIED')
+      return sendError(reply, locale, 403, '权限不足', 'PERMISSION_DENIED')
     }
 
     const body = req.body as Record<string, unknown>
@@ -409,30 +418,30 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     if (body.name !== undefined) {
       const name = body.name as string
       if (!name || name.trim().length < 1 || name.trim().length > 50) {
-        return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+        return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR')
       }
       updates.name = name.trim()
     }
     if (body.url !== undefined) {
       if (!validateUrl(body.url as string)) {
-        return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+        return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR')
       }
       updates.url = body.url as string
     }
     if (body.logoUrl !== undefined) {
       const rawLogoUrl = body.logoUrl
       if (rawLogoUrl !== null && typeof rawLogoUrl !== 'string') {
-        return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+        return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR')
       }
       const logoUrl = typeof rawLogoUrl === 'string' ? rawLogoUrl : ''
       if (logoUrl !== '' && !validateUrl(logoUrl)) {
-        return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+        return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR')
       }
       updates.logoUrl = logoUrl
     }
     if (body.description !== undefined) {
       if ((body.description as string).length > 200) {
-        return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+        return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR')
       }
       updates.description = body.description as string
     }
@@ -440,7 +449,7 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
       const catId = body.categoryId as string | null
       if (catId) {
         const cat = db.select().from(categories).where(eq(categories.id, catId)).get()
-        if (!cat) return sendError(reply, 422, '类别不存在', 'CATEGORY_NOT_FOUND')
+        if (!cat) return sendError(reply, locale, 422, '类别不存在', 'CATEGORY_NOT_FOUND')
       }
       updates.categoryId = catId
     }
@@ -452,11 +461,11 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     if (body.tags !== undefined) {
       const tags = body.tags as string[]
       if (!Array.isArray(tags) || tags.length > 10) {
-        return sendError(reply, 422, '标签最多 10 个', 'VALIDATION_ERROR')
+        return sendError(reply, locale, 422, '标签最多 10 个', 'VALIDATION_ERROR')
       }
       for (const tag of tags) {
         if (typeof tag !== 'string' || tag.length < 1 || tag.length > 20 || /\s/.test(tag)) {
-          return sendError(reply, 422, '标签格式不正确（1-20字符，不可含空格）', 'VALIDATION_ERROR')
+          return sendError(reply, locale, 422, '标签格式不正确（1-20字符，不可含空格）', 'VALIDATION_ERROR')
         }
       }
       newTags = [...new Set(tags)]
@@ -486,27 +495,29 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ── DELETE /:id — delete resource (owner or admin) ─────────────────────────
   fastify.delete('/:id', { preHandler: fastify.authenticate }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { id } = req.params as { id: string }
     const { userId, role } = req.user
 
     const resource = db.select().from(resources).where(eq(resources.id, id)).get()
-    if (!resource) return sendError(reply, 404, '资源不存在', 'RESOURCE_NOT_FOUND')
+    if (!resource) return sendError(reply, locale, 404, '资源不存在', 'RESOURCE_NOT_FOUND')
     if (role !== 'admin' && resource.ownerId !== userId) {
-      return sendError(reply, 403, '权限不足', 'PERMISSION_DENIED')
+      return sendError(reply, locale, 403, '权限不足', 'PERMISSION_DENIED')
     }
 
     db.delete(resources).where(eq(resources.id, id)).run()
-    reply.send({ success: true, data: { message: '删除成功' } })
+    reply.send({ success: true, data: { message: localizeText(locale, '删除成功') } })
   })
 
   // ── POST /:id/visit — record a visit ────────────────────────────────────────
   fastify.post('/:id/visit', async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { id } = req.params as { id: string }
     const { userId, role } = parseOptionalUser(fastify as any, req)
 
     const resource = db.select().from(resources).where(eq(resources.id, id)).get()
     if (!resource || !isVisible(resource, userId, role)) {
-      return sendError(reply, 404, '资源不存在', 'RESOURCE_NOT_FOUND')
+      return sendError(reply, locale, 404, '资源不存在', 'RESOURCE_NOT_FOUND')
     }
 
     const now = Math.floor(Date.now() / 1000)
@@ -536,12 +547,13 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ── POST /:id/favorite — toggle favorite ────────────────────────────────────
   fastify.post('/:id/favorite', { preHandler: fastify.authenticate }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { id } = req.params as { id: string }
     const { userId, role } = req.user
 
     const resource = db.select().from(resources).where(eq(resources.id, id)).get()
     if (!resource || !isVisible(resource, userId, role)) {
-      return sendError(reply, 404, '资源不存在', 'RESOURCE_NOT_FOUND')
+      return sendError(reply, locale, 404, '资源不存在', 'RESOURCE_NOT_FOUND')
     }
 
     const existing = db.select().from(favorites)

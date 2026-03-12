@@ -97,7 +97,7 @@ function ResourceTimeline({ resources, onEdit }) {
           >
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <span style={monthBadgeStyle}>{group.label}</span>
-              <span style={monthMetaStyle}>{group.items.length} 条记录</span>
+              <span style={monthMetaStyle}>{`${group.items.length} 条记录`}</span>
             </div>
             {!mobileLayout && (
               <span style={monthMetaStyle}>

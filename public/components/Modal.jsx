@@ -1,5 +1,14 @@
 // Modal.jsx
-function Modal({ isOpen, onClose, title, children, width = '520px', closeOnBackdrop = true, closeOnEscape = true }) {
+function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  width = '520px',
+  closeOnBackdrop = true,
+  closeOnEscape = true,
+  fullScreen = false,
+}) {
   const { useEffect } = React;
   const { X } = lucide;
 
@@ -16,6 +25,12 @@ function Modal({ isOpen, onClose, title, children, width = '520px', closeOnBackd
       document.body.style.overflow = 'hidden';
       if (scrollbarWidth > 0) {
         document.body.style.paddingRight = `${scrollbarWidth}px`;
+        // 固定定位的 header 相对视口，不受 body padding 影响；滚动条消失后视口变宽会导致个人菜单右移，需同步补偿
+        const headerShell = document.querySelector('[data-rh-layout-header-shell]');
+        if (headerShell) {
+          window.__rhModalBodyLockState.headerPaddingRight = headerShell.style.paddingRight;
+          headerShell.style.paddingRight = `${scrollbarWidth}px`;
+        }
       }
     }
     window.__rhModalLockCount = modalLockCount + 1;
@@ -37,6 +52,10 @@ function Modal({ isOpen, onClose, title, children, width = '520px', closeOnBackd
         const previousState = window.__rhModalBodyLockState || {};
         document.body.style.overflow = previousState.overflow || '';
         document.body.style.paddingRight = previousState.paddingRight || '';
+        const headerShell = document.querySelector('[data-rh-layout-header-shell]');
+        if (headerShell && previousState.headerPaddingRight !== undefined) {
+          headerShell.style.paddingRight = previousState.headerPaddingRight || '';
+        }
         delete window.__rhModalBodyLockState;
       }
     };
@@ -46,13 +65,14 @@ function Modal({ isOpen, onClose, title, children, width = '520px', closeOnBackd
 
   return React.createElement('div', {
     style: {
-      position: 'fixed', inset: 0,
+      position: 'fixed',
+      inset: 0,
       background: 'rgba(19,34,56,0.28)',
       zIndex: 1000,
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
+      alignItems: fullScreen ? 'stretch' : 'center',
+      justifyContent: fullScreen ? 'stretch' : 'center',
+      padding: fullScreen ? 0 : '16px',
     },
     onClick: (e) => {
       if (!closeOnBackdrop) return;
@@ -61,17 +81,17 @@ function Modal({ isOpen, onClose, title, children, width = '520px', closeOnBackd
   },
     React.createElement('div', {
       style: {
-        width,
+        width: fullScreen ? '100%' : width,
         maxWidth: '100%',
-        maxHeight: '90vh',
+        maxHeight: fullScreen ? '100vh' : '90vh',
         background: 'var(--surface-elevated)',
         border: '1px solid var(--border)',
-        borderRadius: '16px',
+        borderRadius: fullScreen ? 0 : '16px',
         boxShadow: 'var(--shadow-modal)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-      }
+      },
     },
       // Header
       React.createElement('div', {

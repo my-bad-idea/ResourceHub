@@ -12,6 +12,7 @@ function App() {
   const isAdmin = !!(state && state.currentUser && state.currentUser.role === 'admin');
   const currentToken = state ? state.token : null;
   const currentUserId = state?.currentUser?.id ?? null;
+  const currentLocale = state?.locale || window.i18n?.getCurrentLocale?.() || 'zh-Hans';
 
   const hydrateAuthenticatedPreferences = React.useCallback((user) => {
     if (!user || !window.uiPreferences?.getUserPreferences) return;
@@ -24,6 +25,7 @@ function App() {
 
   // 1. App initialization (runs once on mount)
   React.useEffect(() => {
+    if (window.i18n?.applyLocale) window.i18n.applyLocale(currentLocale);
     const theme = state?.theme || window.uiPreferences?.getGuestPreferences?.().theme || 'system';
     if (window.applyTheme) window.applyTheme(theme);
 
@@ -79,6 +81,10 @@ function App() {
 
     init();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  React.useEffect(() => {
+    document.title = state?.config?.siteTitle || window.i18n?.translateText?.('资源导航系统') || '资源导航系统';
+  }, [currentLocale, state?.config?.siteTitle]);
 
   // 2. Reload user data when token changes (after login/logout)
   React.useEffect(() => {

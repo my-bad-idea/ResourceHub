@@ -45,7 +45,7 @@ function ForgotPasswordPage() {
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '0 0 24px', lineHeight: '1.5' }}>
             输入注册邮箱，系统将发送密码重置链接
           </p>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>邮箱</label>
               <input

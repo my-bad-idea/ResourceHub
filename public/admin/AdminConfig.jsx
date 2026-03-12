@@ -1,6 +1,7 @@
 function AdminConfig() {
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
+  const { t } = window.useI18n();
   const { Save, Loader } = lucide;
 
   const [form, setForm] = React.useState({
@@ -16,6 +17,8 @@ function AdminConfig() {
   const [errors, setErrors] = React.useState({});
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const localizableConfigValues = new Set(['资源导航系统', '统一管理与访问你的资源', '登录以访问全部资源导航']);
+  const getLocalizedConfigValue = (value) => (localizableConfigValues.has(value) ? t(value) : value);
 
   React.useEffect(() => {
     async function load() {
@@ -152,15 +155,15 @@ function AdminConfig() {
       <div style={panelStyle}>
         <div style={fieldStyle}>
           <label style={labelStyle}>站点标题</label>
-          <input value={form.siteTitle} onChange={e => setForm(f => ({ ...f, siteTitle: e.target.value }))}
+          <input value={getLocalizedConfigValue(form.siteTitle)} onChange={e => setForm(f => ({ ...f, siteTitle: e.target.value }))}
             className="rh-admin-input" style={inputStyle('siteTitle')} placeholder="资源导航系统" disabled={saving} />
           {errors.siteTitle && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.siteTitle}</div>}
         </div>
 
         <div style={fieldStyle}>
           <label style={labelStyle}>站点副标题</label>
-          <input value={form.siteSubtitle} onChange={e => setForm(f => ({ ...f, siteSubtitle: e.target.value }))}
-            className="rh-admin-input" style={inputStyle('siteSubtitle')} placeholder="企业内部资源导航" disabled={saving} />
+          <input value={getLocalizedConfigValue(form.siteSubtitle)} onChange={e => setForm(f => ({ ...f, siteSubtitle: e.target.value }))}
+            className="rh-admin-input" style={inputStyle('siteSubtitle')} placeholder="统一管理与访问你的资源" disabled={saving} />
           {errors.siteSubtitle && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.siteSubtitle}</div>}
         </div>
 

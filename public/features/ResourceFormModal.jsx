@@ -1,4 +1,4 @@
-function ResourceFormModal({ isOpen, onClose, resource }) {
+function ResourceFormModal({ isOpen, onClose, resource, onOpenBatch }) {
   const state = window.useAppState();
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
@@ -829,7 +829,34 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
               >
                 删除
               </button>
-            ) : <div />}
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {onOpenBatch && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenBatch();
+                    }}
+                    disabled={loading}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--text-secondary)',
+                      borderRadius: '8px',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      fontSize: '14px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <lucide.ListPlus size={14} /> 批量录入
+                  </button>
+                )}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 onClick={onClose}

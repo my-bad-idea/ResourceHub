@@ -1,13 +1,16 @@
 const { useState, useEffect, useRef } = React;
-const { Search, Sun, Moon, Monitor, User, LogOut, Settings, Shield, ChevronDown } = lucide;
+const { Search, Sun, Moon, Monitor, User, LogOut, Settings, Shield, ChevronDown, Languages } = lucide;
 
 function Header({ variant = 'default', showSearch = true }) {
   const state = window.useAppState();
   const dispatch = window.useAppDispatch();
   const { navigate } = window.useRouter();
+  const { locale, setLocale, locales, getNativeLabel } = window.useI18n();
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const searchRef = useRef(null);
+  const languageMenuRef = useRef(null);
   const themeMenuRef = useRef(null);
   const userMenuRef = useRef(null);
   const viewportWidth = window.useViewportWidth();
@@ -27,6 +30,7 @@ function Header({ variant = 'default', showSearch = true }) {
 
   useEffect(() => {
     const handler = (e) => {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(e.target)) setShowLanguageMenu(false);
       if (themeMenuRef.current && !themeMenuRef.current.contains(e.target)) setShowThemeMenu(false);
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false);
     };
@@ -186,6 +190,78 @@ function Header({ variant = 'default', showSearch = true }) {
 
   const actions = (
     <div data-rh-header-actions style={{ display: 'flex', alignItems: 'center', gap: '8px', justifySelf: 'end', justifyContent: 'flex-end' }}>
+      <div ref={languageMenuRef} style={{ position: 'relative' }}>
+        <button
+          data-rh-language-trigger
+          onClick={() => setShowLanguageMenu((value) => !value)}
+          style={{
+            ...baseControlButtonStyle,
+            minHeight: '38px',
+            padding: isMobile ? '0 10px' : '0 12px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: 'var(--text-primary)',
+            fontSize: '13px',
+            fontWeight: 700,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'color-mix(in srgb, var(--brand-soft) 54%, var(--surface-elevated))';
+            e.currentTarget.style.borderColor = 'var(--brand)';
+            e.currentTarget.style.boxShadow = 'var(--shadow-control-hover)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = baseControlButtonStyle.background;
+            e.currentTarget.style.borderColor = baseControlBorderColor;
+            e.currentTarget.style.boxShadow = baseControlShadow;
+          }}
+        >
+          <Languages size={16} />
+          {!isMobile && <span>{getNativeLabel(locale)}</span>}
+        </button>
+
+        {showLanguageMenu && (
+          <div style={{
+            position: 'absolute',
+            right: 0,
+            top: 'calc(100% + 6px)',
+            width: '168px',
+            background: menuSurface,
+            border: '1px solid var(--control-border)',
+            borderRadius: '12px',
+            boxShadow: 'var(--shadow-dropdown)',
+            padding: '4px',
+            zIndex: 200,
+          }}>
+            {locales.map((item) => (
+              <button
+                key={item}
+                data-rh-language-option={item}
+                onClick={() => { setLocale(item); setShowLanguageMenu(false); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: '100%',
+                  padding: '0 10px',
+                  height: '36px',
+                  background: locale === item ? menuOptionActive : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: locale === item ? 'var(--brand-strong)' : 'var(--text-primary)',
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  fontWeight: locale === item ? 700 : 500,
+                }}
+                onMouseEnter={(e) => { if (locale !== item) e.currentTarget.style.background = menuOptionHover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = locale === item ? menuOptionActive : 'transparent'; }}
+              >
+                {getNativeLabel(item)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div ref={themeMenuRef} style={{ position: 'relative' }}>
         <button
           data-rh-theme-trigger

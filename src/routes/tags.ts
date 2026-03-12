@@ -2,9 +2,16 @@ import type { FastifyPluginAsync, FastifyReply } from 'fastify'
 import { db } from '../db/index.js'
 import { resourceTags } from '../db/schema.js'
 import { eq, sql, desc } from 'drizzle-orm'
+import { getRequestLocale, localizeText } from '../i18n.js'
 
-function sendError(reply: FastifyReply, status: number, error: string, code: string) {
-  reply.code(status).send({ success: false, error, code })
+function sendError(
+  reply: FastifyReply,
+  locale: ReturnType<typeof getRequestLocale>,
+  status: number,
+  error: string,
+  code: string
+) {
+  reply.code(status).send({ success: false, error: localizeText(locale, error), code })
 }
 
 const tagsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -22,6 +29,7 @@ const tagsRoutes: FastifyPluginAsync = async (fastify) => {
 
   // DELETE /:tag — admin
   fastify.delete('/:tag', { preHandler: fastify.requireAdmin }, async (req, reply) => {
+    const locale = getRequestLocale(req)
     const { tag } = req.params as { tag: string }
 
     const countRow = db
@@ -32,7 +40,10 @@ const tagsRoutes: FastifyPluginAsync = async (fastify) => {
     const affectedResources = countRow?.count ?? 0
 
     db.delete(resourceTags).where(eq(resourceTags.tag, tag)).run()
-    reply.send({ success: true, data: { message: '删除成功', affectedResources } })
+    reply.send({
+      success: true,
+      data: { message: localizeText(locale, '删除成功'), affectedResources },
+    })
   })
 }
 

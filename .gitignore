@@ -103,3 +103,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .yarn-integrity
 lerna-debug.log*
+
+.cursor/
