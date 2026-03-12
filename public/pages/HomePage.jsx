@@ -271,7 +271,12 @@ function HomePage({ pageType = 'overview' } = {}) {
     let cancelled = false;
 
     const loadTrafficMetrics = () => {
-      request('/api/resources/analytics')
+      const maybeRecordVisit = isOverviewMode
+        ? request('/api/resources/analytics/visit', { method: 'POST' }).catch(() => null)
+        : Promise.resolve(null);
+
+      Promise.resolve(maybeRecordVisit)
+        .then(() => request('/api/resources/analytics'))
         .then((response) => {
           if (!response.ok || cancelled) return;
           setTrafficMetrics({
@@ -294,7 +299,7 @@ function HomePage({ pageType = 'overview' } = {}) {
       cancelled = true;
       window.removeEventListener('rh:analytics-invalidated', handleAnalyticsInvalidated);
     };
-  }, [request, currentUser?.id]);
+  }, [request, currentUser?.id, isOverviewMode]);
   const overviewCardColumns = viewportWidth >= 1440 ? 5 : viewportWidth >= 1280 ? 4 : viewportWidth >= 960 ? 3 : viewportWidth >= 640 ? 2 : 1;
   const filterSummaryLabel = selectedCategoryItem.id !== null
     ? '类别筛选结果'
@@ -1130,8 +1135,8 @@ function HomeOverview({
       ? '1px solid color-mix(in srgb, var(--control-border) 46%, var(--surface-tint))'
       : '1px solid color-mix(in srgb, var(--border-strong) 42%, var(--surface-tint))',
     background: isLightTheme
-      ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted)) 100%)'
-      : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 92%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 88%, var(--bg-primary)) 100%)',
+      ? 'color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint))'
+      : 'color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint))',
     boxShadow: isLightTheme
       ? '0 10px 22px color-mix(in srgb, var(--text-primary) 4%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--control-border) 18%, transparent), inset 0 1px 0 color-mix(in srgb, white 50%, transparent)'
       : '0 12px 24px color-mix(in srgb, var(--bg-primary) 18%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 18%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 28%, transparent)',
@@ -1145,8 +1150,8 @@ function HomeOverview({
       ? '1px solid color-mix(in srgb, var(--control-border) 42%, var(--surface-tint))'
       : '1px solid color-mix(in srgb, var(--border-strong) 36%, var(--surface-tint))',
     background: isLightTheme
-      ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--control-bg-muted)) 100%)'
-      : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 88%, var(--bg-primary)) 0%, color-mix(in srgb, var(--surface-elevated) 82%, var(--bg-primary)) 100%)',
+      ? 'color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted))'
+      : 'color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary))',
     boxShadow: isLightTheme
       ? '0 8px 16px color-mix(in srgb, var(--text-primary) 2%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--control-border) 16%, transparent), inset 0 1px 0 color-mix(in srgb, white 44%, transparent)'
       : '0 10px 18px color-mix(in srgb, var(--bg-primary) 14%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 20%, transparent)',
@@ -1287,8 +1292,6 @@ function HomeOverview({
         display: 'grid',
         gap: '16px',
         width: '100%',
-        maxWidth: '1480px',
-        justifySelf: 'center',
       }}
     >
       <div
@@ -1697,15 +1700,15 @@ function HomeSidebarNav({
       ? '1px solid color-mix(in srgb, var(--brand) 26%, transparent)'
       : quietResults
         ? isLightTheme
-          ? '1px solid color-mix(in srgb, var(--control-border) 10%, transparent)'
-          : '1px solid color-mix(in srgb, var(--outline-strong) 10%, transparent)'
+          ? '1px solid color-mix(in srgb, var(--control-border) 32%, var(--surface-tint))'
+          : '1px solid color-mix(in srgb, var(--outline-strong) 30%, var(--surface-tint))'
         : '1px solid transparent',
     background: active
       ? 'color-mix(in srgb, var(--brand-soft) 48%, var(--control-bg))'
       : quietResults
         ? isLightTheme
-          ? 'color-mix(in srgb, var(--surface-elevated) 64%, var(--control-bg-muted))'
-          : 'color-mix(in srgb, var(--surface-elevated) 28%, var(--control-bg))'
+          ? 'color-mix(in srgb, var(--surface-elevated) 82%, var(--control-bg-muted))'
+          : 'color-mix(in srgb, var(--surface-elevated) 42%, var(--control-bg))'
         : isLightTheme
           ? 'color-mix(in srgb, var(--control-bg) 42%, transparent)'
           : 'color-mix(in srgb, var(--control-bg) 72%, var(--control-bg-muted))',
@@ -1737,16 +1740,16 @@ function HomeSidebarNav({
       ? '1px solid color-mix(in srgb, var(--brand) 24%, transparent)'
       : quietResults
         ? isLightTheme
-          ? '1px solid color-mix(in srgb, var(--control-border) 10%, transparent)'
-          : '1px solid color-mix(in srgb, var(--outline-strong) 10%, transparent)'
+          ? '1px solid color-mix(in srgb, var(--control-border) 32%, var(--surface-tint))'
+          : '1px solid color-mix(in srgb, var(--outline-strong) 30%, var(--surface-tint))'
         : '1px solid transparent',
     borderRadius: sidebarMenuRadius,
     background: active
       ? 'color-mix(in srgb, var(--brand-soft) 46%, var(--control-bg))'
       : quietResults
         ? isLightTheme
-          ? 'color-mix(in srgb, var(--surface-elevated) 68%, var(--control-bg-muted))'
-          : 'color-mix(in srgb, var(--surface-elevated) 24%, var(--control-bg))'
+          ? 'color-mix(in srgb, var(--surface-elevated) 84%, var(--control-bg-muted))'
+          : 'color-mix(in srgb, var(--surface-elevated) 40%, var(--control-bg))'
         : 'transparent',
     color: active
       ? 'var(--brand-strong)'
@@ -1775,15 +1778,15 @@ function HomeSidebarNav({
       ? '1px solid color-mix(in srgb, var(--brand) 30%, transparent)'
       : quietResults
         ? isLightTheme
-          ? '1px solid color-mix(in srgb, var(--control-border) 10%, transparent)'
-          : '1px solid color-mix(in srgb, var(--outline-strong) 10%, transparent)'
+          ? '1px solid color-mix(in srgb, var(--control-border) 32%, var(--surface-tint))'
+          : '1px solid color-mix(in srgb, var(--outline-strong) 30%, var(--surface-tint))'
         : '1px solid transparent',
     background: active
       ? 'color-mix(in srgb, var(--brand-soft) 52%, var(--control-bg))'
       : quietResults
         ? isLightTheme
-          ? 'color-mix(in srgb, var(--surface-elevated) 64%, var(--control-bg-muted))'
-          : 'color-mix(in srgb, var(--surface-elevated) 24%, var(--control-bg))'
+          ? 'color-mix(in srgb, var(--surface-elevated) 82%, var(--control-bg-muted))'
+          : 'color-mix(in srgb, var(--surface-elevated) 40%, var(--control-bg))'
         : isLightTheme
           ? 'color-mix(in srgb, var(--control-bg) 34%, transparent)'
           : 'color-mix(in srgb, var(--control-bg) 62%, var(--control-bg-muted))',
@@ -1964,6 +1967,26 @@ function HomeSidebarNav({
           <div data-rh-home-sidebar-section="quick-access" style={sectionStyle}>
             <div style={sectionTitleStyle}>快捷访问</div>
             <div style={{ display: 'grid', gap: sidebarActionGap }}>
+              <button
+                type="button"
+                data-rh-quick-access-item="all"
+                data-rh-quick-access-active={quickAccessFilter ? 'false' : 'true'}
+                onClick={() => handleQuickAccess(null)}
+                style={menuButtonStyle(!quickAccessFilter)}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: quietResults ? '8px' : '10px', minWidth: 0, flex: 1 }}>
+                  <span
+                    style={{
+                      width: '2px',
+                      height: quietResults ? '14px' : '16px',
+                      borderRadius: '999px',
+                      background: !quickAccessFilter ? 'var(--brand)' : 'transparent',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>全部资源</span>
+                </span>
+              </button>
               {quickAccessItems.map((item) => {
                 const Icon = quickAccessIconMap[item.value] || item.Icon;
                 const active = quickAccessFilter === item.key;

@@ -118,6 +118,12 @@ function App() {
     }
   }, [initializing, path, isAdmin]);
 
+  React.useEffect(() => {
+    if (!initializing && path === '/login' && currentToken && currentUserId) {
+      navigate('#/');
+    }
+  }, [initializing, path, currentToken, currentUserId, navigate]);
+
   // Loading screen
   if (initializing) {
     return (
@@ -140,7 +146,10 @@ function App() {
 
   // Router
   if (path === '/setup') return <window.SetupPage />;
-  if (path === '/login') return <window.LoginPage />;
+  if (path === '/login') {
+    if (currentToken && currentUserId) return null;
+    return <window.LoginPage />;
+  }
   if (path === '/register') return <window.RegisterPage />;
   if (path === '/forgot-password') return <window.ForgotPasswordPage />;
   if (path === '/reset-password') return <window.ResetPasswordPage />;

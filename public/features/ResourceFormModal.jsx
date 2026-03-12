@@ -299,7 +299,7 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
         url: form.url.trim(),
         categoryId: form.categoryId || null,
         visibility: form.visibility,
-        logoUrl: form.logoUrl.trim() || null,
+        logoUrl: form.logoUrl.trim(),
         description: form.description,
         tags: form.tags,
         enabled: form.enabled,
