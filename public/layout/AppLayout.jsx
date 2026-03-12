@@ -97,10 +97,10 @@ function AppLayout({ children, showSidebar = true, contentPaddingTop = null, hea
             background: `
               linear-gradient(
                 180deg,
-                color-mix(in srgb, var(--surface-tint) 18%, var(--surface-elevated)) 0%,
-                color-mix(in srgb, var(--surface-tint) 14%, var(--surface-elevated)) 72px,
-                color-mix(in srgb, var(--surface-tint) 8%, var(--bg-primary)) 176px,
-                var(--bg-primary) 280px
+                color-mix(in srgb, var(--surface-tint) 16%, var(--surface-elevated)) 0%,
+                color-mix(in srgb, var(--surface-tint) 10%, var(--surface-elevated)) 72px,
+                color-mix(in srgb, var(--surface-muted) 8%, var(--bg-primary)) 132px,
+                var(--bg-primary) 220px
               )
             `,
           }}

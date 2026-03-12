@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db/index.js'
-import { resources, resourceTags, favorites, visitHistory, resourceVisitHourly, categories, users } from '../db/schema.js'
+import { resources, resourceTags, favorites, visitHistory, visitHourly, categories, users } from '../db/schema.js'
 import { eq, and, or, sql, inArray, like, asc, desc } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 
@@ -77,24 +77,6 @@ function batchFetchCategories(categoryIds: (string | null)[]): Map<string, { nam
   return new Map(rows.map((c) => [c.id, { name: c.name, color: c.color }]))
 }
 
-/** Batch-load aggregated visit counts from the hourly visit table. */
-function batchFetchVisitCounts(resourceIds: string[]): Map<string, number> {
-  if (resourceIds.length === 0) return new Map()
-  const rows = db.select({
-    resourceId: resourceVisitHourly.resourceId,
-    visitCount: resourceVisitHourly.visitCount,
-  })
-    .from(resourceVisitHourly)
-    .where(inArray(resourceVisitHourly.resourceId, resourceIds))
-    .all()
-
-  const map = new Map<string, number>()
-  for (const row of rows) {
-    map.set(row.resourceId, (map.get(row.resourceId) || 0) + (row.visitCount || 0))
-  }
-  return map
-}
-
 /** Get the set of resource IDs favorited by a user. */
 function fetchFavoritedSet(userId: string | null): Set<string> {
   if (!userId) return new Set()
@@ -110,8 +92,7 @@ function buildResourceResponse(
   resource: typeof resources.$inferSelect,
   categoryMap: Map<string, { name: string; color: string }>,
   tagMap: Map<string, string[]>,
-  favoritedSet: Set<string>,
-  visitCountMap: Map<string, number>
+  favoritedSet: Set<string>
 ) {
   const cat = resource.categoryId ? categoryMap.get(resource.categoryId) : null
   return {
@@ -126,7 +107,7 @@ function buildResourceResponse(
     description: resource.description,
     enabled: resource.enabled,
     ownerId: resource.ownerId,
-    visitCount: visitCountMap.get(resource.id) ?? 0,
+    visitCount: resource.visitCount || 0,
     tags: tagMap.get(resource.id) ?? [],
     isFavorited: favoritedSet.has(resource.id),
     createdAt: resource.createdAt,
@@ -192,10 +173,9 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     const tagMap = batchFetchTags(ids)
     const categoryMap = batchFetchCategories(rows.map((r) => r.categoryId))
     const favoritedSet = fetchFavoritedSet(userId)
-    const visitCountMap = batchFetchVisitCounts(ids)
 
     const data = rows
-      .map((r) => buildResourceResponse(r, categoryMap, tagMap, favoritedSet, visitCountMap))
+      .map((r) => buildResourceResponse(r, categoryMap, tagMap, favoritedSet))
       .sort((a, b) => {
         if (sort === 'createdAt') return (b.createdAt || 0) - (a.createdAt || 0)
         if (sort === 'updatedAt') return (b.updatedAt || 0) - (a.updatedAt || 0)
@@ -204,43 +184,26 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     reply.send({ success: true, data })
   })
 
-  // ── GET /analytics — visibility-aware visit summary ───────────────────────
-  fastify.get('/analytics', async (req, reply) => {
-    const { userId, role } = parseOptionalUser(fastify as any, req)
-    const visCond = buildVisibilityCond(userId, role)
-
-    const visibleRows = visCond
-      ? db.select({ id: resources.id }).from(resources).where(visCond).all()
-      : db.select({ id: resources.id }).from(resources).all()
-
-    const visibleIds = visibleRows.map((row) => row.id)
+  // ── GET /analytics — global hourly visit summary ───────────────────────────
+  fastify.get('/analytics', async (_req, reply) => {
     const now = Math.floor(Date.now() / 1000)
-    const recent30Threshold = now - 30 * 24 * 60 * 60
-    const recent24Threshold = now - 24 * 60 * 60
+    const recent30Threshold = now - 30 * 24 * 3600
+    const recent24Threshold = now - 24 * 3600
 
-    let totalVisits = 0
-    let monthlyVisits = 0
-    let dailyVisits = 0
+    const hourlyRows = db.select({
+      visitHour: visitHourly.visitHour,
+      visitCount: visitHourly.visitCount,
+    }).from(visitHourly).all()
 
-    if (visibleIds.length > 0) {
-      const hourlyRows = db.select({
-        visitHour: resourceVisitHourly.visitHour,
-        visitCount: resourceVisitHourly.visitCount,
-      })
-        .from(resourceVisitHourly)
-        .where(inArray(resourceVisitHourly.resourceId, visibleIds))
-        .all()
-
-      totalVisits = hourlyRows.reduce((sum, row) => sum + (row.visitCount || 0), 0)
-      monthlyVisits = hourlyRows.reduce(
-        (sum, row) => sum + (row.visitHour >= recent30Threshold ? row.visitCount : 0),
-        0
-      )
-      dailyVisits = hourlyRows.reduce(
-        (sum, row) => sum + (row.visitHour >= recent24Threshold ? row.visitCount : 0),
-        0
-      )
-    }
+    const totalVisits = hourlyRows.reduce((sum, row) => sum + (row.visitCount || 0), 0)
+    const monthlyVisits = hourlyRows.reduce(
+      (sum, row) => sum + (row.visitHour >= recent30Threshold ? row.visitCount : 0),
+      0
+    )
+    const dailyVisits = hourlyRows.reduce(
+      (sum, row) => sum + (row.visitHour >= recent24Threshold ? row.visitCount : 0),
+      0
+    )
 
     reply.send({
       success: true,
@@ -250,6 +213,22 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
         dailyVisits,
       },
     })
+  })
+
+  // ── POST /analytics/visit — record homepage visit ─────────────────────────
+  fastify.post('/analytics/visit', async (_req, reply) => {
+    const now = Math.floor(Date.now() / 1000)
+    const visitHour = getVisitHourBucket(now)
+
+    db.insert(visitHourly)
+      .values({ visitHour, visitCount: 1 })
+      .onConflictDoUpdate({
+        target: [visitHourly.visitHour],
+        set: { visitCount: sql`${visitHourly.visitCount} + 1` },
+      })
+      .run()
+
+    reply.send({ success: true, data: { ok: true } })
   })
 
   // ── POST / — create resource ────────────────────────────────────────────────
@@ -323,11 +302,10 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     const tagMap = batchFetchTags([id])
     const categoryMap = batchFetchCategories([resource.categoryId])
     const favoritedSet = fetchFavoritedSet(req.user.userId)
-    const visitCountMap = batchFetchVisitCounts([id])
 
     reply.code(201).send({
       success: true,
-      data: buildResourceResponse(resource, categoryMap, tagMap, favoritedSet, visitCountMap),
+      data: buildResourceResponse(resource, categoryMap, tagMap, favoritedSet),
     })
   })
 
@@ -353,13 +331,12 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     const tagMap = batchFetchTags(resourceIds)
     const categoryMap = batchFetchCategories(resourceRows.map((r) => r.categoryId))
     const favoritedSet = new Set(resourceIds)
-    const visitCountMap = batchFetchVisitCounts(resourceIds)
 
     // Return in favorites order (createdAt desc)
     const data = resourceIds
       .map((id) => resourceMap.get(id))
       .filter((r): r is typeof resources.$inferSelect => r !== undefined)
-      .map((r) => buildResourceResponse(r, categoryMap, tagMap, favoritedSet, visitCountMap))
+      .map((r) => buildResourceResponse(r, categoryMap, tagMap, favoritedSet))
 
     reply.send({ success: true, data })
   })
@@ -387,13 +364,12 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     const tagMap = batchFetchTags(uniqueIds)
     const categoryMap = batchFetchCategories(resourceRows.map((r) => r.categoryId))
     const favoritedSet = fetchFavoritedSet(userId)
-    const visitCountMap = batchFetchVisitCounts(uniqueIds)
 
     // Return in history order (visitedAt desc), same resource can appear multiple times
     const data = resourceIds
       .map((id) => resourceMap.get(id))
       .filter((r): r is typeof resources.$inferSelect => r !== undefined)
-      .map((r) => buildResourceResponse(r, categoryMap, tagMap, favoritedSet, visitCountMap))
+      .map((r) => buildResourceResponse(r, categoryMap, tagMap, favoritedSet))
 
     reply.send({ success: true, data })
   })
@@ -411,9 +387,8 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     const tagMap = batchFetchTags(ids)
     const categoryMap = batchFetchCategories(rows.map((r) => r.categoryId))
     const favoritedSet = fetchFavoritedSet(userId)
-    const visitCountMap = batchFetchVisitCounts(ids)
 
-    const data = rows.map((r) => buildResourceResponse(r, categoryMap, tagMap, favoritedSet, visitCountMap))
+    const data = rows.map((r) => buildResourceResponse(r, categoryMap, tagMap, favoritedSet))
     reply.send({ success: true, data })
   })
 
@@ -445,7 +420,11 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
       updates.url = body.url as string
     }
     if (body.logoUrl !== undefined) {
-      const logoUrl = body.logoUrl as string
+      const rawLogoUrl = body.logoUrl
+      if (rawLogoUrl !== null && typeof rawLogoUrl !== 'string') {
+        return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
+      }
+      const logoUrl = typeof rawLogoUrl === 'string' ? rawLogoUrl : ''
       if (logoUrl !== '' && !validateUrl(logoUrl)) {
         return sendError(reply, 422, '请求参数校验失败', 'VALIDATION_ERROR')
       }
@@ -501,9 +480,8 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     const tagMap = batchFetchTags([id])
     const categoryMap = batchFetchCategories([updated.categoryId])
     const favoritedSet = fetchFavoritedSet(userId)
-    const visitCountMap = batchFetchVisitCounts([id])
 
-    reply.send({ success: true, data: buildResourceResponse(updated, categoryMap, tagMap, favoritedSet, visitCountMap) })
+    reply.send({ success: true, data: buildResourceResponse(updated, categoryMap, tagMap, favoritedSet) })
   })
 
   // ── DELETE /:id — delete resource (owner or admin) ─────────────────────────
@@ -532,17 +510,9 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const now = Math.floor(Date.now() / 1000)
-    const visitHour = getVisitHourBucket(now)
     db.update(resources)
       .set({ visitCount: sql`${resources.visitCount} + 1` })
       .where(eq(resources.id, id))
-      .run()
-    db.insert(resourceVisitHourly)
-      .values({ resourceId: id, visitHour, visitCount: 1 })
-      .onConflictDoUpdate({
-        target: [resourceVisitHourly.resourceId, resourceVisitHourly.visitHour],
-        set: { visitCount: sql`${resourceVisitHourly.visitCount} + 1` },
-      })
       .run()
 
     if (userId) {
@@ -560,12 +530,8 @@ const resourcesRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
-    const visitCountRows = db.select({ visitCount: resourceVisitHourly.visitCount })
-      .from(resourceVisitHourly)
-      .where(eq(resourceVisitHourly.resourceId, id))
-      .all()
-    const aggregatedVisitCount = visitCountRows.reduce((sum, row) => sum + (row.visitCount || 0), 0)
-    reply.send({ success: true, data: { visitCount: aggregatedVisitCount } })
+    const updatedResource = db.select({ visitCount: resources.visitCount }).from(resources).where(eq(resources.id, id)).get()
+    reply.send({ success: true, data: { visitCount: updatedResource?.visitCount || 0 } })
   })
 
   // ── POST /:id/favorite — toggle favorite ────────────────────────────────────

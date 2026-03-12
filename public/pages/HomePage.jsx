@@ -1,9 +1,10 @@
 
-function HomePage() {
+function HomePage({ pageType = 'overview' } = {}) {
   const state = window.useAppState();
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
   const viewportWidth = window.useViewportWidth();
+  const { navigate } = window.useRouter();
   const { LayoutGrid, List, Clock, Plus, ChevronDown, Heart, FileText, Menu, ArrowLeft, X } = lucide;
 
   const [showResourceModal, setShowResourceModal] = React.useState(false);
@@ -12,7 +13,6 @@ function HomePage() {
   const [showSortMenu, setShowSortMenu] = React.useState(false);
   const [highlightedSort, setHighlightedSort] = React.useState('hot');
   const [showAllSidebarTags, setShowAllSidebarTags] = React.useState(false);
-  const [browseAllMode, setBrowseAllMode] = React.useState(false);
   const [trafficMetrics, setTrafficMetrics] = React.useState({
     totalVisits: 0,
     monthlyVisits: 0,
@@ -207,7 +207,7 @@ function HomePage() {
     return [...selectedFirst, ...remaining.slice(0, 4)];
   }, [mergedOrderedTags, selectedTagsList, showAllSidebarTags]);
   const hiddenSidebarTagCount = Math.max(mergedOrderedTags.length - visibleSidebarTags.length, 0);
-  const isOverviewMode = !hasFilters && !browseAllMode;
+  const isOverviewMode = pageType !== 'results';
   const isResultsMode = !isOverviewMode;
   const visibleCategoryCount = resolvedCategories.length;
   const visibleTagCount = orderedTags.length;
@@ -241,7 +241,9 @@ function HomePage() {
         previewNames,
         previewTags,
       };
-    });
+    })
+      .sort((a, b) => (b.resourceCount || 0) - (a.resourceCount || 0) || (a.name || '').localeCompare(b.name || '', 'zh-CN'))
+      .slice(0, 5);
   }, [resolvedCategories, resources, categoryCountMap]);
   const overviewPopularResources = React.useMemo(
     () => [...resources].sort((a, b) => (b.visitCount || 0) - (a.visitCount || 0)).slice(0, 4),
@@ -253,14 +255,14 @@ function HomePage() {
   );
   const overviewQuickAccessEntries = currentUser
     ? [
-        { key: 'favorites', label: '我的收藏', count: favorites.length, note: '快速回到常用资源', emptyNote: '还没有收藏资源', filter: 'favorites', Icon: Heart },
-        { key: 'history', label: '最近访问', count: history.length, note: '继续上次浏览路径', emptyNote: '还没有访问记录', filter: 'history', Icon: Clock },
-        { key: 'mine', label: '我创建的', count: mine.length, note: '维护自己的内容', emptyNote: '还没有创建内容', filter: 'mine', Icon: FileText },
+        { key: 'favorites', label: '我的收藏', count: favorites.length, note: '快速回到常用资源', emptyNote: '还没有收藏资源', filter: 'favorites', accent: 'var(--brand)', Icon: Heart },
+        { key: 'history', label: '最近访问', count: history.length, note: '继续上次浏览路径', emptyNote: '还没有访问记录', filter: 'history', accent: 'var(--success)', Icon: Clock },
+        { key: 'mine', label: '我创建的', count: mine.length, note: '维护自己的内容', emptyNote: '还没有创建内容', filter: 'mine', accent: 'var(--brand-strong)', Icon: FileText },
       ]
     : [];
   const overviewSections = [
-    { key: 'popular', title: '热门资源', description: '按访问热度挑选常用入口。', resources: overviewPopularResources, actionLabel: '查看更多', action: () => setBrowseAllMode(true) },
-    { key: 'recent', title: '最近更新', description: '快速查看最近维护或新增的内容。', resources: overviewRecentResources, actionLabel: '查看更多', action: () => setBrowseAllMode(true) },
+    { key: 'popular', title: '热门资源', description: '按访问热度挑选常用入口。', resources: overviewPopularResources, actionLabel: '查看更多', action: () => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/resources'); } },
+    { key: 'recent', title: '最近更新', description: '快速查看最近维护或新增的内容。', resources: overviewRecentResources, actionLabel: '查看更多', action: () => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/resources'); } },
     ...(currentUser && mine.length > 0
       ? [{ key: 'mine', title: '我的资源', description: '继续维护你创建和拥有的资源。', resources: mine.slice(0, 4), actionLabel: '查看全部', action: () => dispatch({ type: 'SET_QUICK_ACCESS_FILTER', filter: 'mine' }) }]
       : []),
@@ -269,7 +271,12 @@ function HomePage() {
     let cancelled = false;
 
     const loadTrafficMetrics = () => {
-      request('/api/resources/analytics')
+      const maybeRecordVisit = isOverviewMode
+        ? request('/api/resources/analytics/visit', { method: 'POST' }).catch(() => null)
+        : Promise.resolve(null);
+
+      Promise.resolve(maybeRecordVisit)
+        .then(() => request('/api/resources/analytics'))
         .then((response) => {
           if (!response.ok || cancelled) return;
           setTrafficMetrics({
@@ -292,7 +299,7 @@ function HomePage() {
       cancelled = true;
       window.removeEventListener('rh:analytics-invalidated', handleAnalyticsInvalidated);
     };
-  }, [request, currentUser?.id]);
+  }, [request, currentUser?.id, isOverviewMode]);
   const overviewCardColumns = viewportWidth >= 1440 ? 5 : viewportWidth >= 1280 ? 4 : viewportWidth >= 960 ? 3 : viewportWidth >= 640 ? 2 : 1;
   const filterSummaryLabel = selectedCategoryItem.id !== null
     ? '类别筛选结果'
@@ -748,7 +755,15 @@ function HomePage() {
             position: 'relative',
             display: 'grid',
             gap: isMobile ? '10px' : '12px',
-            paddingTop: isOverviewMode ? (isMobile ? '8px' : '12px') : resultsTopPadding,
+            paddingTop: isOverviewMode ? (isMobile ? '16px' : '22px') : resultsTopPadding,
+            paddingBottom: isOverviewMode ? '8px' : 0,
+            borderRadius: isOverviewMode ? '20px' : 0,
+            minHeight: 'calc(100vh - var(--app-header-height, 73px) - 24px)',
+            background: isOverviewMode
+              ? (isLightTheme
+                ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, var(--surface-muted)) 0%, color-mix(in srgb, var(--surface-elevated) 92%, var(--bg-primary)) 100%)'
+                : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 84%, var(--surface-muted)) 0%, color-mix(in srgb, var(--surface-elevated) 80%, var(--bg-primary)) 100%)')
+              : 'transparent',
           }}
         >
           {isOverviewMode ? (
@@ -765,17 +780,20 @@ function HomePage() {
               stackActions={viewportWidth < 720}
               inlineMetrics={viewportWidth >= 960}
               onBrowseAll={() => {
-                setBrowseAllMode(true);
+                dispatch({ type: 'CLEAR_FILTERS' });
                 setShowSortMenu(false);
+                navigate('#/resources');
               }}
               onCreate={currentUser ? openCreate : null}
               onSelectCategory={(categoryId) => {
-                setBrowseAllMode(false);
+                dispatch({ type: 'CLEAR_FILTERS' });
                 dispatch({ type: 'SET_CATEGORY', category: categoryId });
+                navigate('#/resources');
               }}
               onSelectQuickAccess={(filter) => {
-                setBrowseAllMode(false);
+                dispatch({ type: 'CLEAR_FILTERS' });
                 dispatch({ type: 'SET_QUICK_ACCESS_FILTER', filter });
+                navigate('#/resources');
               }}
             />
           ) : (
@@ -924,7 +942,7 @@ function HomePage() {
                       ) : (
                         <button
                           data-rh-home-overview-return
-                          onClick={() => setBrowseAllMode(false)}
+                          onClick={() => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/'); }}
                           onMouseEnter={(event) => handleSummaryActionHover(event, true)}
                           onMouseLeave={(event) => handleSummaryActionHover(event, false)}
                           style={summaryActionButtonStyle(isMobile)}
@@ -1118,19 +1136,23 @@ function HomeOverview({
       ? '1px solid color-mix(in srgb, var(--control-border) 46%, var(--surface-tint))'
       : '1px solid color-mix(in srgb, var(--border-strong) 42%, var(--surface-tint))',
     background: isLightTheme
-      ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted)) 100%)'
-      : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 92%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 88%, var(--bg-primary)) 100%)',
+      ? 'color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint))'
+      : 'color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint))',
     boxShadow: isLightTheme
       ? '0 10px 22px color-mix(in srgb, var(--text-primary) 4%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--control-border) 18%, transparent), inset 0 1px 0 color-mix(in srgb, white 50%, transparent)'
       : '0 12px 24px color-mix(in srgb, var(--bg-primary) 18%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 18%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 28%, transparent)',
   };
+  const [hoveredQuickAccessKey, setHoveredQuickAccessKey] = React.useState(null);
+  const [hoveredCategoryId, setHoveredCategoryId] = React.useState(null);
+  const interactiveCardTransition = 'transform 170ms, border-color 170ms, background 170ms, box-shadow 170ms';
+  const interactiveCardLift = 'translateY(-2px)';
   const quickAccessEmptySurfaceStyle = {
     border: isLightTheme
       ? '1px solid color-mix(in srgb, var(--control-border) 42%, var(--surface-tint))'
       : '1px solid color-mix(in srgb, var(--border-strong) 36%, var(--surface-tint))',
     background: isLightTheme
-      ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--control-bg-muted)) 100%)'
-      : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 88%, var(--bg-primary)) 0%, color-mix(in srgb, var(--surface-elevated) 82%, var(--bg-primary)) 100%)',
+      ? 'color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted))'
+      : 'color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary))',
     boxShadow: isLightTheme
       ? '0 8px 16px color-mix(in srgb, var(--text-primary) 2%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--control-border) 16%, transparent), inset 0 1px 0 color-mix(in srgb, white 44%, transparent)'
       : '0 10px 18px color-mix(in srgb, var(--bg-primary) 14%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 20%, transparent)',
@@ -1271,8 +1293,6 @@ function HomeOverview({
         display: 'grid',
         gap: '16px',
         width: '100%',
-        maxWidth: '1480px',
-        justifySelf: 'center',
       }}
     >
       <div
@@ -1363,7 +1383,7 @@ function HomeOverview({
                   color: 'var(--text-primary)',
                   boxShadow: isZeroMetric
                     ? 'none'
-                    : 'inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 52%, transparent)',
+                    : `inset 0 1px 0 color-mix(in srgb, ${card.accent} 10%, transparent)`,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
@@ -1388,7 +1408,7 @@ function HomeOverview({
                         : card.accent,
                       boxShadow: isZeroMetric
                         ? `0 0 0 3px color-mix(in srgb, ${card.accent} 8%, transparent)`
-                        : `0 0 0 4px color-mix(in srgb, ${card.accent} 14%, transparent)`,
+                        : `0 0 0 4px color-mix(in srgb, ${card.accent} 10%, transparent)`,
                       flexShrink: 0,
                     }}
                   />
@@ -1442,16 +1462,37 @@ function HomeOverview({
                   type="button"
                   data-rh-overview-quick-access={entry.key}
                   data-rh-overview-quick-access-empty={isEmptyEntry ? 'true' : 'false'}
+                  onMouseEnter={() => setHoveredQuickAccessKey(entry.key)}
+                  onMouseLeave={() => setHoveredQuickAccessKey(null)}
                   onClick={() => onSelectQuickAccess(entry.filter)}
                   style={{
                     minHeight: '88px',
                     padding: '13px',
                     borderRadius: '16px',
-                    ...(isEmptyEntry ? quickAccessEmptySurfaceStyle : quickAccessSurfaceStyle),
+                    ...((isEmptyEntry ? quickAccessEmptySurfaceStyle : quickAccessSurfaceStyle)),
+                    border: isEmptyEntry
+                      ? quickAccessEmptySurfaceStyle.border
+                      : (hoveredQuickAccessKey === entry.key
+                        ? (isLightTheme
+                          ? `1px solid color-mix(in srgb, ${entry.accent || 'var(--brand)'} 42%, var(--control-border))`
+                          : `1px solid color-mix(in srgb, ${entry.accent || 'var(--brand)'} 48%, var(--border-strong))`)
+                        : quickAccessSurfaceStyle.border),
+                    background: isEmptyEntry
+                      ? quickAccessEmptySurfaceStyle.background
+                      : (isLightTheme
+                        ? 'color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint))'
+                        : 'color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint))'),
                     display: 'grid',
                     gap: '6px',
                     textAlign: 'left',
                     cursor: 'pointer',
+                    transform: !isEmptyEntry && hoveredQuickAccessKey === entry.key ? interactiveCardLift : 'translateY(0)',
+                    boxShadow: !isEmptyEntry && hoveredQuickAccessKey === entry.key
+                      ? (isLightTheme
+                        ? `0 14px 26px color-mix(in srgb, ${entry.accent || 'var(--brand)'} 20%, transparent)`
+                        : `0 16px 30px color-mix(in srgb, ${entry.accent || 'var(--brand)'} 22%, transparent)`)
+                      : (isEmptyEntry ? quickAccessEmptySurfaceStyle.boxShadow : quickAccessSurfaceStyle.boxShadow),
+                    transition: interactiveCardTransition,
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
@@ -1468,7 +1509,7 @@ function HomeOverview({
                       style={{
                         fontSize: '20px',
                         fontWeight: 800,
-                        color: isEmptyEntry ? 'var(--text-secondary)' : 'var(--brand-strong)',
+                        color: isEmptyEntry ? 'var(--text-secondary)' : (entry.accent || 'var(--brand-strong)'),
                         opacity: isEmptyEntry ? 0.78 : 1,
                       }}
                     >
@@ -1505,6 +1546,8 @@ function HomeOverview({
               key={category.id}
               type="button"
               data-rh-overview-category-card={String(category.id)}
+              onMouseEnter={() => setHoveredCategoryId(category.id)}
+              onMouseLeave={() => setHoveredCategoryId(null)}
               onClick={() => onSelectCategory(category.id)}
               style={{
                 minHeight: '104px',
@@ -1512,15 +1555,22 @@ function HomeOverview({
                 borderRadius: '16px',
                 ...surfaceStyle,
                 border: isLightTheme
-                  ? `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} 18%, var(--control-border))`
-                  : `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} 24%, var(--border))`,
+                  ? `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 26 : 16}%, var(--control-border))`
+                  : `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 30 : 18}%, var(--border))`,
                 background: isLightTheme
-                  ? `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} 8%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint)) 100%)`
-                  : `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} 12%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 100%)`,
+                  ? `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 10 : 6}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint)) 100%)`
+                  : `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 14 : 9}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 100%)`,
                 display: 'grid',
                 gap: '8px',
                 textAlign: 'left',
                 cursor: 'pointer',
+                transform: hoveredCategoryId === category.id ? interactiveCardLift : 'translateY(0)',
+                boxShadow: hoveredCategoryId === category.id
+                  ? (isLightTheme
+                    ? '0 14px 28px color-mix(in srgb, var(--text-primary) 8%, transparent)'
+                    : '0 16px 30px color-mix(in srgb, var(--bg-primary) 28%, transparent)')
+                  : surfaceStyle.boxShadow,
+                transition: interactiveCardTransition,
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
@@ -1651,15 +1701,15 @@ function HomeSidebarNav({
       ? '1px solid color-mix(in srgb, var(--brand) 26%, transparent)'
       : quietResults
         ? isLightTheme
-          ? '1px solid color-mix(in srgb, var(--control-border) 10%, transparent)'
-          : '1px solid color-mix(in srgb, var(--outline-strong) 10%, transparent)'
+          ? '1px solid color-mix(in srgb, var(--control-border) 32%, var(--surface-tint))'
+          : '1px solid color-mix(in srgb, var(--outline-strong) 30%, var(--surface-tint))'
         : '1px solid transparent',
     background: active
       ? 'color-mix(in srgb, var(--brand-soft) 48%, var(--control-bg))'
       : quietResults
         ? isLightTheme
-          ? 'color-mix(in srgb, var(--surface-elevated) 64%, var(--control-bg-muted))'
-          : 'color-mix(in srgb, var(--surface-elevated) 28%, var(--control-bg))'
+          ? 'color-mix(in srgb, var(--surface-elevated) 82%, var(--control-bg-muted))'
+          : 'color-mix(in srgb, var(--surface-elevated) 42%, var(--control-bg))'
         : isLightTheme
           ? 'color-mix(in srgb, var(--control-bg) 42%, transparent)'
           : 'color-mix(in srgb, var(--control-bg) 72%, var(--control-bg-muted))',
@@ -1691,16 +1741,16 @@ function HomeSidebarNav({
       ? '1px solid color-mix(in srgb, var(--brand) 24%, transparent)'
       : quietResults
         ? isLightTheme
-          ? '1px solid color-mix(in srgb, var(--control-border) 10%, transparent)'
-          : '1px solid color-mix(in srgb, var(--outline-strong) 10%, transparent)'
+          ? '1px solid color-mix(in srgb, var(--control-border) 32%, var(--surface-tint))'
+          : '1px solid color-mix(in srgb, var(--outline-strong) 30%, var(--surface-tint))'
         : '1px solid transparent',
     borderRadius: sidebarMenuRadius,
     background: active
       ? 'color-mix(in srgb, var(--brand-soft) 46%, var(--control-bg))'
       : quietResults
         ? isLightTheme
-          ? 'color-mix(in srgb, var(--surface-elevated) 68%, var(--control-bg-muted))'
-          : 'color-mix(in srgb, var(--surface-elevated) 24%, var(--control-bg))'
+          ? 'color-mix(in srgb, var(--surface-elevated) 84%, var(--control-bg-muted))'
+          : 'color-mix(in srgb, var(--surface-elevated) 40%, var(--control-bg))'
         : 'transparent',
     color: active
       ? 'var(--brand-strong)'
@@ -1729,15 +1779,15 @@ function HomeSidebarNav({
       ? '1px solid color-mix(in srgb, var(--brand) 30%, transparent)'
       : quietResults
         ? isLightTheme
-          ? '1px solid color-mix(in srgb, var(--control-border) 10%, transparent)'
-          : '1px solid color-mix(in srgb, var(--outline-strong) 10%, transparent)'
+          ? '1px solid color-mix(in srgb, var(--control-border) 32%, var(--surface-tint))'
+          : '1px solid color-mix(in srgb, var(--outline-strong) 30%, var(--surface-tint))'
         : '1px solid transparent',
     background: active
       ? 'color-mix(in srgb, var(--brand-soft) 52%, var(--control-bg))'
       : quietResults
         ? isLightTheme
-          ? 'color-mix(in srgb, var(--surface-elevated) 64%, var(--control-bg-muted))'
-          : 'color-mix(in srgb, var(--surface-elevated) 24%, var(--control-bg))'
+          ? 'color-mix(in srgb, var(--surface-elevated) 82%, var(--control-bg-muted))'
+          : 'color-mix(in srgb, var(--surface-elevated) 40%, var(--control-bg))'
         : isLightTheme
           ? 'color-mix(in srgb, var(--control-bg) 34%, transparent)'
           : 'color-mix(in srgb, var(--control-bg) 62%, var(--control-bg-muted))',
@@ -1918,6 +1968,26 @@ function HomeSidebarNav({
           <div data-rh-home-sidebar-section="quick-access" style={sectionStyle}>
             <div style={sectionTitleStyle}>快捷访问</div>
             <div style={{ display: 'grid', gap: sidebarActionGap }}>
+              <button
+                type="button"
+                data-rh-quick-access-item="all"
+                data-rh-quick-access-active={quickAccessFilter ? 'false' : 'true'}
+                onClick={() => handleQuickAccess(null)}
+                style={menuButtonStyle(!quickAccessFilter)}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: quietResults ? '8px' : '10px', minWidth: 0, flex: 1 }}>
+                  <span
+                    style={{
+                      width: '2px',
+                      height: quietResults ? '14px' : '16px',
+                      borderRadius: '999px',
+                      background: !quickAccessFilter ? 'var(--brand)' : 'transparent',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>全部资源</span>
+                </span>
+              </button>
               {quickAccessItems.map((item) => {
                 const Icon = quickAccessIconMap[item.value] || item.Icon;
                 const active = quickAccessFilter === item.key;

@@ -51,11 +51,10 @@ export const visitHistory = sqliteTable('visit_history', {
   visitedAt:  integer('visited_at').notNull()
 })
 
-export const resourceVisitHourly = sqliteTable('resource_visit_hourly', {
-  resourceId: text('resource_id').notNull().references(() => resources.id, { onDelete: 'cascade' }),
-  visitHour:  integer('visit_hour').notNull(),
+export const visitHourly = sqliteTable('visit_hourly', {
+  visitHour:  integer('visit_hour').primaryKey(),
   visitCount: integer('visit_count').notNull().default(0)
-}, (t) => ({ pk: primaryKey({ columns: [t.resourceId, t.visitHour] }) }))
+})
 
 export const systemConfig = sqliteTable('system_config', {
   id:                   text('id').primaryKey().default('default'),

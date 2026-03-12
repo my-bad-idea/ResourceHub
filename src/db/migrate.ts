@@ -62,11 +62,10 @@ export function runMigrations(): void {
       visited_at INTEGER NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS resource_visit_hourly (
-      resource_id TEXT NOT NULL REFERENCES resources(id) ON DELETE CASCADE,
+    CREATE TABLE IF NOT EXISTS visit_hourly (
       visit_hour INTEGER NOT NULL,
       visit_count INTEGER NOT NULL DEFAULT 0,
-      PRIMARY KEY (resource_id, visit_hour)
+      PRIMARY KEY (visit_hour)
     );
 
     CREATE TABLE IF NOT EXISTS system_config (
@@ -103,6 +102,20 @@ export function runMigrations(): void {
     INSERT OR IGNORE INTO system_config (id) VALUES ('default');
     INSERT OR IGNORE INTO email_config (id) VALUES ('default');
   `)
+
+  const oldVisitHourly = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='resource_visit_hourly'").get() as { name?: string } | undefined
+  if (oldVisitHourly?.name) {
+    const newCountRow = sqlite.prepare('SELECT COUNT(*) as count FROM visit_hourly').get() as { count: number }
+    if ((newCountRow?.count || 0) === 0) {
+      sqlite.exec(`
+        INSERT INTO visit_hourly (visit_hour, visit_count)
+        SELECT visit_hour, SUM(visit_count) AS visit_count
+        FROM resource_visit_hourly
+        GROUP BY visit_hour
+      `)
+    }
+    sqlite.exec('DROP TABLE IF EXISTS resource_visit_hourly;')
+  }
 }
 
 export function seedMockData(adminId: string): void {

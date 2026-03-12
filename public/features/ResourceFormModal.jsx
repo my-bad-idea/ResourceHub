@@ -28,6 +28,7 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
   const [deleting, setDeleting] = React.useState(false);
   const [showTagSuggestions, setShowTagSuggestions] = React.useState(false);
   const [showCategorySuggestions, setShowCategorySuggestions] = React.useState(false);
+  const [hoveredCategoryId, setHoveredCategoryId] = React.useState(null);
   const tagPanelRef = React.useRef(null);
   const tagInputRef = React.useRef(null);
   const categoryPanelRef = React.useRef(null);
@@ -50,6 +51,7 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
     setCategoryInput(initialCategoryName);
     setShowTagSuggestions(false);
     setShowCategorySuggestions(false);
+    setHoveredCategoryId(null);
   }, [isOpen, resource?.id]);
 
   const allTags = React.useMemo(() => {
@@ -108,6 +110,7 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
     setForm((prev) => ({ ...prev, categoryId: category.id }));
     setCategoryInput(category.name);
     setShowCategorySuggestions(false);
+    setHoveredCategoryId(null);
   }, []);
 
   const handleCreateCategory = React.useCallback(async (rawValue) => {
@@ -296,7 +299,7 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
         url: form.url.trim(),
         categoryId: form.categoryId || null,
         visibility: form.visibility,
-        logoUrl: form.logoUrl.trim() || null,
+        logoUrl: form.logoUrl.trim(),
         description: form.description,
         tags: form.tags,
         enabled: form.enabled,
@@ -518,18 +521,42 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
                   }}
                 />
               ) : (
-                <lucide.ChevronDown
-                  size={16}
+                <button
+                  type="button"
+                  aria-label={showCategorySuggestions ? '收起类别列表' : '展开类别列表'}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    if (loading || addingCatLoading) return;
+                    setShowCategorySuggestions((prev) => !prev);
+                    if (!showCategorySuggestions) {
+                      categoryInputRef.current?.focus();
+                    }
+                  }}
                   style={{
                     position: 'absolute',
-                    right: '12px',
+                    right: '8px',
                     top: '50%',
-                    transform: `translateY(-50%) rotate(${showCategorySuggestions ? 180 : 0}deg)`,
+                    transform: 'translateY(-50%)',
+                    width: '24px',
+                    height: '24px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    background: 'transparent',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
                     color: 'var(--text-secondary)',
-                    transition: 'transform 150ms ease',
-                    pointerEvents: 'none',
                   }}
-                />
+                >
+                  <lucide.ChevronDown
+                    size={16}
+                    style={{
+                      transform: `rotate(${showCategorySuggestions ? 180 : 0}deg)`,
+                      transition: 'transform 150ms ease',
+                    }}
+                  />
+                </button>
               )}
               {categorySuggestionsVisible && (
                 <div style={suggestionPanelStyle}>
@@ -542,6 +569,8 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
                         key={category.id}
                         type="button"
                         onMouseDown={(event) => event.preventDefault()}
+                        onMouseEnter={() => setHoveredCategoryId(category.id)}
+                        onMouseLeave={() => setHoveredCategoryId(null)}
                         onClick={() => handleCategorySelect(category)}
                         style={{
                           minHeight: '38px',
@@ -550,12 +579,15 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
                           border: 'none',
                           background: category.id === form.categoryId
                             ? 'color-mix(in srgb, var(--brand-soft) 84%, var(--control-bg))'
+                            : hoveredCategoryId === category.id
+                              ? 'color-mix(in srgb, var(--surface-tint) 68%, var(--control-bg))'
                             : 'transparent',
                           color: category.id === form.categoryId ? 'var(--brand-strong)' : 'var(--text-primary)',
                           cursor: 'pointer',
                           fontSize: '14px',
-                          fontWeight: category.id === form.categoryId ? 700 : 500,
+                          fontWeight: category.id === form.categoryId ? 700 : hoveredCategoryId === category.id ? 600 : 500,
                           textAlign: 'left',
+                          transition: 'background 120ms ease, color 120ms ease',
                         }}
                       >
                         {category.name}
@@ -598,7 +630,33 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
           </div>
 
           <div style={fieldStyle}>
-            <label style={labelStyle}>标签（最多10个，每个最多20字符）</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label style={{ ...labelStyle, marginBottom: 0 }}>标签（最多10个，每个最多20字符）</label>
+              {form.tags.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, tags: [] }));
+                    setTagInput('');
+                    window.requestAnimationFrame(() => {
+                      tagInputRef.current?.focus();
+                      setShowTagSuggestions(true);
+                    });
+                  }}
+                  disabled={loading}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--text-secondary)',
+                    fontSize: '12px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  清空标签
+                </button>
+              )}
+            </div>
             <div ref={tagPanelRef} style={{ position: 'relative' }}>
               <div
                 onClick={() => {
@@ -659,12 +717,15 @@ function ResourceFormModal({ isOpen, onClose, resource }) {
                     flex: '1 0 140px',
                     minWidth: '120px',
                     padding: '2px 0',
-                    border: 'none',
+                    border: 0,
                     background: 'transparent',
                     color: 'var(--text-primary)',
                     fontSize: '14px',
                     outline: 'none',
+                    boxShadow: 'none',
                     boxSizing: 'border-box',
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
                   }}
                 />
               </div>
