@@ -1,0 +1,36 @@
+{
+    "name": "resourcehub",
+    "version": "1.0.0",
+    "type": "module",
+    "author": "Libo Zhang",
+    "email": "zhanglibo610@gmail.com",
+    "license": "MIT",
+    "scripts": {
+        "dev": "tsx watch src/app.ts",
+        "build": "tsc",
+        "start": "node dist/app.js",
+        "test:smoke": "node test/smoke.mjs",
+        "test:browser": "node test/browser-acceptance.mjs",
+        "check": "npm run build && npm run test:smoke"
+    },
+    "dependencies": {
+        "@fastify/cors": "^9",
+        "@fastify/jwt": "^8",
+        "@fastify/static": "^7",
+        "bcryptjs": "^3.0.3",
+        "better-sqlite3": "^12",
+        "drizzle-orm": "^0.30",
+        "fastify": "^4",
+        "fastify-plugin": "^4",
+        "nodemailer": "^6",
+        "uuid": "^9"
+    },
+    "devDependencies": {
+        "@types/better-sqlite3": "^7.6.13",
+        "@types/node": "^20",
+        "@types/nodemailer": "^6",
+        "@types/uuid": "^9",
+        "tsx": "^4",
+        "typescript": "^5"
+    }
+}

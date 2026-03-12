@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>资源导航系统</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230071E3'/%3E%3Ctext x='50%25' y='53%25' text-anchor='middle' dominant-baseline='middle' font-family='Arial,sans-serif' font-size='34' font-weight='700' fill='white'%3ER%3C/text%3E%3C/svg%3E" />
+
+  <!-- React 18 -->
+  <script src="/vendor/react.development.js"></script>
+  <script src="/vendor/react-dom.development.js"></script>
+
+  <!-- Babel Standalone for JSX transpilation -->
+  <script src="/vendor/babel.min.js"></script>
+
+  <!-- Lucide React icons (UMD) -->
+  <script>window.react = window.React;</script>
+  <script src="/vendor/lucide-react.min.js"></script>
+  <script>
+    // Expose as `lucide` so all components can use `const { Plus, ... } = lucide`
+    window.lucide = window.LucideReact || {};
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', 'DM Sans', -apple-system, 'Noto Sans SC', sans-serif;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--surface-tint) 34%, var(--bg-primary)) 0%, var(--bg-primary) 260px),
+        var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    :root {
+      --bg-primary:    #F3F7FD;
+      --bg-secondary:  #FFFFFF;
+      --bg-tertiary:   #E5ECF7;
+      --surface-elevated: #FFFFFF;
+      --surface-muted: #F7FAFF;
+      --surface-tint:  #DCE9FF;
+      --text-primary:  #162136;
+      --text-secondary:#627089;
+      --brand:         #1769FF;
+      --brand-soft:    #DCE9FF;
+      --brand-strong:  #1259D6;
+      --border:        #D7DFEC;
+      --border-strong: #B7C7DF;
+      --outline-strong:#A6B9D6;
+      --control-bg:    #F8FBFF;
+      --control-bg-muted:#EFF5FD;
+      --control-border:#C4D3E6;
+      --control-border-strong:#9FB7D7;
+      --shadow-control: 0 3px 9px rgba(18,32,57,0.06), 0 1px 3px rgba(18,32,57,0.03);
+      --shadow-control-hover: 0 8px 18px rgba(18,32,57,0.08), 0 2px 6px rgba(18,32,57,0.04);
+      --danger:        #FF3B30;
+      --success:       #34C759;
+      --shadow-card:   0 14px 32px rgba(18,32,57,0.08), 0 2px 8px rgba(18,32,57,0.05);
+      --shadow-modal:  0 28px 72px rgba(18,32,57,0.18);
+      --shadow-dropdown: 0 18px 40px rgba(18,32,57,0.16), 0 6px 16px rgba(18,32,57,0.08);
+    }
+
+    .dark {
+      --bg-primary:    #0D1117;
+      --bg-secondary:  #161B22;
+      --bg-tertiary:   #21262D;
+      --surface-elevated: #161B22;
+      --surface-muted: #1B2430;
+      --surface-tint:  #132846;
+      --text-primary:  #E6EDF3;
+      --text-secondary:#8B949E;
+      --brand:         #2F81F7;
+      --brand-soft:    #16345D;
+      --brand-strong:  #6EA8FF;
+      --border:        #30363D;
+      --border-strong: #5D6978;
+      --outline-strong:#748396;
+      --control-bg:    #1A2330;
+      --control-bg-muted:#202B38;
+      --control-border:#5F738D;
+      --control-border-strong:#7E95B3;
+      --shadow-control: 0 2px 6px rgba(0,0,0,0.24);
+      --shadow-control-hover: 0 4px 12px rgba(0,0,0,0.34);
+      --danger:        #F85149;
+      --success:       #3FB950;
+      --shadow-card:   0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+      --shadow-modal:  0 20px 60px rgba(0,0,0,0.5);
+      --shadow-dropdown: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    /* Shimmer animation for skeleton screens */
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .shimmer {
+      background: linear-gradient(
+        90deg,
+        var(--bg-tertiary) 0%,
+        var(--bg-secondary) 50%,
+        var(--bg-tertiary) 100%
+      );
+      background-size: 800px 100%;
+      animation: shimmer 1.5s infinite linear;
+    }
+
+    /* Spinner for loading buttons */
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Smooth scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Input / select focus ring */
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--brand) !important;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent);
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: color-mix(in srgb, var(--text-secondary) 84%, transparent);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- ① utils -->
+  <script type="text/babel" src="/utils/preferences.jsx"></script>
+  <script type="text/babel" src="/utils/theme.jsx"></script>
+  <script type="text/babel" src="/utils/helpers.jsx"></script>
+
+  <!-- ② hooks -->
+  <script type="text/babel" src="/hooks/useApi.jsx"></script>
+  <script type="text/babel" src="/hooks/useRouter.jsx"></script>
+
+  <!-- ③ context -->
+  <script type="text/babel" src="/context/AppContext.jsx"></script>
+
+  <!-- ④ shared components -->
+  <script type="text/babel" src="/components/Toast.jsx"></script>
+  <script type="text/babel" src="/components/Modal.jsx"></script>
+    <script type="text/babel" src="/components/ConfirmDialog.jsx"></script>
+    <script type="text/babel" src="/components/EmailPreviewModal.jsx"></script>
+    <script type="text/babel" src="/components/Skeleton.jsx"></script>
+    <script type="text/babel" src="/components/EmptyState.jsx"></script>
+    <script type="text/babel" src="/components/PasswordStrength.jsx"></script>
+    <script type="text/babel" src="/components/DropdownSelect.jsx"></script>
+    <script type="text/babel" src="/components/TooltipIconButton.jsx"></script>
+
+  <!-- ⑤ layout -->
+  <script type="text/babel" src="/layout/Header.jsx"></script>
+  <script type="text/babel" src="/layout/Sidebar.jsx"></script>
+  <script type="text/babel" src="/layout/AppLayout.jsx"></script>
+  <script type="text/babel" src="/layout/AuthLayout.jsx"></script>
+  <script type="text/babel" src="/layout/AdminLayout.jsx"></script>
+
+  <!-- ⑥ features -->
+  <script type="text/babel" src="/features/ResourceCard.jsx"></script>
+  <script type="text/babel" src="/features/ResourceRow.jsx"></script>
+  <script type="text/babel" src="/features/ResourceTimeline.jsx"></script>
+  <script type="text/babel" src="/features/ResourceFormModal.jsx"></script>
+  <script type="text/babel" src="/features/ProfileModal.jsx"></script>
+  <script type="text/babel" src="/features/ChangePasswordModal.jsx"></script>
+
+  <!-- ⑦ admin panels -->
+  <script type="text/babel" src="/admin/AdminCategories.jsx"></script>
+  <script type="text/babel" src="/admin/AdminTags.jsx"></script>
+  <script type="text/babel" src="/admin/AdminUsers.jsx"></script>
+  <script type="text/babel" src="/admin/AdminConfig.jsx"></script>
+  <script type="text/babel" src="/admin/AdminEmail.jsx"></script>
+
+  <!-- ⑧ pages -->
+  <script type="text/babel" src="/pages/SetupPage.jsx"></script>
+  <script type="text/babel" src="/pages/LoginPage.jsx"></script>
+  <script type="text/babel" src="/pages/RegisterPage.jsx"></script>
+  <script type="text/babel" src="/pages/ForgotPasswordPage.jsx"></script>
+  <script type="text/babel" src="/pages/ResetPasswordPage.jsx"></script>
+  <script type="text/babel" src="/pages/HomePage.jsx"></script>
+  <script type="text/babel" src="/pages/AdminPage.jsx"></script>
+
+  <!-- ⑨ app entry — mounts React root -->
+  <script type="text/babel" src="/app.jsx"></script>
+</body>
+</html>
