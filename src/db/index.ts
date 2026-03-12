@@ -4,7 +4,7 @@ import { mkdirSync } from 'fs'
 import { dirname } from 'path'
 import * as schema from './schema.js'
 
-const DB_PATH = process.env.DB_PATH ?? 'data/app.db'
+const DB_PATH = process.env.DB_PATH ?? 'data/resource-hub.db'
 
 mkdirSync(dirname(DB_PATH), { recursive: true })
 

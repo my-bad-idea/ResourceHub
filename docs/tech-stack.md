@@ -55,7 +55,7 @@
 ### 4. 数据库与 ORM
 
 - **SQLite + Drizzle ORM**
-  - 使用 SQLite 单文件数据库（默认路径为 `data/app.db`），通过 `better-sqlite3` 驱动访问。
+  - 使用 SQLite 单文件数据库（默认路径为 `data/resource-hub.db`），通过 `better-sqlite3` 驱动访问。
   - 使用 Drizzle ORM 在 TypeScript 中定义 Schema 与类型，避免手写 SQL 带来的注入风险。
   - 所有表（用户、资源、类别、标签关联、收藏、访问历史、系统配置、邮件配置、重置 token、初始化标记等）都集中定义在 `src/db/schema.ts`。
 - **迁移与初始化**
@@ -90,7 +90,7 @@
 - **关键环境变量**
   - `PORT`：服务监听端口，默认 `3000`。
   - `JWT_SECRET`：JWT 签名密钥，开发默认值为 `dev-secret-change-me`，生产环境必须覆盖。
-  - `DB_PATH`：SQLite 数据库文件路径，默认 `data/app.db`。
+  - `DB_PATH`：SQLite 数据库文件路径，默认 `data/resource-hub.db`。
   - `NODE_ENV`：运行环境标识，`development` / `production` 等，影响日志和错误输出方式。
 
 ### 7. 选型边界与后续扩展方向

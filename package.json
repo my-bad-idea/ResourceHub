@@ -11,7 +11,10 @@
         "start": "node dist/app.js",
         "test:smoke": "node test/smoke.mjs",
         "test:browser": "node test/browser-acceptance.mjs",
-        "check": "npm run build && npm run test:smoke"
+        "check": "npm run build && npm run test:smoke",
+        "release:patch": "npm version patch && npm publish",
+        "release:minor": "npm version minor && npm publish",
+        "release:major": "npm version major && npm publish"
     },
     "dependencies": {
         "@fastify/cors": "^9",
