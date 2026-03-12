@@ -98,6 +98,13 @@ export function runMigrations(): void {
       used INTEGER NOT NULL DEFAULT 0
     );
 
+    CREATE TABLE IF NOT EXISTS rsa_keys (
+      id TEXT PRIMARY KEY DEFAULT 'current',
+      public_key TEXT NOT NULL,
+      private_key TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+
     INSERT OR IGNORE INTO initialized (id, done) VALUES ('default', 0);
     INSERT OR IGNORE INTO system_config (id) VALUES ('default');
     INSERT OR IGNORE INTO email_config (id) VALUES ('default');

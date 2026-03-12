@@ -36,8 +36,15 @@
   - 将 `initialized.done` 置为 `true`。
 - 初始化状态（`/init-status`）：
   - 公开接口，返回 `{ initialized: boolean }`。
+- 获取 RSA 公钥（`/rsa-public-key`）：
+  - 公开接口，返回 `{ success: true, data: { publicKey, alg: 'RSA', ts } }`：
+    - `publicKey` 为 PEM 格式 RSA 公钥（`BEGIN PUBLIC KEY`），供前端加密使用。
+    - `alg` 固定为 `'RSA'`，`ts` 为当前 Unix 秒时间戳，便于前端调试与缓存策略。
 - 登录（`/login`）：
-  - 按用户名查找用户，校验密码和账号状态。
+  - 接收加密密码参数 `{ username, passwordEnc, ts }`：
+    - 前端使用后端提供的 RSA 公钥，对 `password + ':' + ts` 采用 RSA-OAEP（SHA-256）加密，并以 Base64 形式提交 `passwordEnc`。
+    - `ts` 为 Unix 秒时间戳，用于服务端校验请求是否过期（默认窗口约 ±120 秒）。
+  - 后端按用户名查找用户，校验账号状态；使用私钥解密 `passwordEnc`，解析出原始密码并进行 bcrypt 校验。
   - 根据 `system_config.tokenExpiry` 决定 JWT 过期时间。
   - 返回 `{ token, user }`，`user` 为脱敏后的用户对象。
 - 注册（`/register`）：
@@ -56,7 +63,10 @@
 - 个人信息与密码修改（`/me`、`/me` PUT、`/me/password`）：
   - 仅登录用户可访问。
   - 支持更新显示名称和邮箱（需保证邮箱唯一）。
-  - 修改密码需校验当前密码、新旧密码不同以及新密码规则。
+  - 修改密码：
+    - 接收加密密码参数 `{ currentPasswordEnc, newPasswordEnc, ts }`，加密方式与登录相同。
+    - 校验时间戳是否在允许窗口内。
+    - 使用私钥分别解密得到明文当前密码与新密码，校验当前密码、新旧密码不同以及新密码规则；前端负责保证两次新密码一致。
 
 关键约定：
 
@@ -203,6 +213,7 @@
 - 权限相关：`PERMISSION_DENIED`。
 - 账号与注册：`REGISTER_DISABLED`、`EMAIL_DOMAIN_NOT_ALLOWED`、`USERNAME_TAKEN`、`EMAIL_TAKEN`。
 - 密码重置：`RESET_TOKEN_INVALID`、`RESET_TOKEN_EXPIRED`、`RESET_TOKEN_USED`、`WRONG_PASSWORD`、`SAME_PASSWORD`。
+- 登录与加密：`LOGIN_TIMESTAMP_EXPIRED`、`PASSWORD_ENCRYPTION_INVALID`。
 - 通用资源：`RESOURCE_NOT_FOUND`、`CATEGORY_NOT_FOUND`、`USER_NOT_FOUND`、`CATEGORY_NAME_TAKEN`、`CANNOT_DELETE_SELF`、`VALIDATION_ERROR`。
 
 #### 4.3 安全要点
@@ -212,6 +223,9 @@
 - 所有数据库访问通过 Drizzle ORM 构建 SQL，避免手写字符串拼接。
 - 敏感字段（密码哈希、SMTP 密码）不得出现在任何 API 响应中。
 - 登录与忘记密码接口不区分“账号/邮箱是否存在”，防止暴力枚举。
+- 登录与修改密码请求中的密码在传输中使用 RSA-OAEP 加密：
+  - RSA 密钥对存储在 `rsa_keys` 表中，仅私钥保存在服务端，永不通过 API 暴露。
+  - 前端仅通过 `GET /api/auth/rsa-public-key` 获取公钥；若密钥不存在，服务启动时会自动生成并写入数据库。
 
 ### 5. 典型时序示例（文字版）
 

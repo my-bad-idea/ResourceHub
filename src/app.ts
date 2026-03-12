@@ -5,6 +5,7 @@ import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
 import staticPlugin from '@fastify/static'
 import { runMigrations } from './db/migrate.js'
+import { ensureRsaKeyPair } from './services/rsa.js'
 import authPlugin from './plugins/auth.js'
 import adminPlugin from './plugins/admin.js'
 import authRoutes from './routes/auth.js'
@@ -20,6 +21,7 @@ const NODE_ENV = process.env.NODE_ENV ?? 'development'
 
 export async function buildApp() {
   runMigrations()
+  ensureRsaKeyPair()
 
   const fastify = Fastify({
     logger: NODE_ENV === 'development' ? { level: 'info' } : false,

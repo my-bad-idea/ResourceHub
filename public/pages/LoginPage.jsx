@@ -53,9 +53,10 @@ function LoginPage() {
     setLoading(true);
     setErrors((prev) => ({ ...prev, form: '' }));
     try {
+      const { passwordEnc, ts } = await window.security.encryptPasswordWithTs(form.password);
       const { ok, data } = await request('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ username: form.username, password: form.password }),
+        body: JSON.stringify({ username: form.username, passwordEnc, ts }),
       });
       if (ok) {
         dispatch({ type: 'LOGIN', user: data.data.user, token: data.data.token });

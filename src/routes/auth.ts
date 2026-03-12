@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm'
 import { seedMockData } from '../db/migrate.js'
 import { createResetToken, validateResetToken, markTokenUsed } from '../services/token.js'
 import { deliverMail } from '../services/mail.js'
+import { getPublicKey, decryptWithPrivateKey } from '../services/rsa.js'
 import {
   getForgotPasswordMail,
   getRegisterMail,
@@ -81,6 +82,13 @@ function formatUser(u: typeof users.$inferSelect) {
 
 const authRoutes: FastifyPluginAsync = async (fastify) => {
 
+  // GET /rsa-public-key
+  fastify.get('/rsa-public-key', async (_req, reply) => {
+    const publicKey = getPublicKey()
+    const now = Math.floor(Date.now() / 1000)
+    reply.send({ success: true, data: { publicKey, alg: 'RSA', ts: now } })
+  })
+
   // GET /init-status
   fastify.get('/init-status', async (_req, reply) => {
     const row = db.select().from(initialized).where(eq(initialized.id, 'default')).get()
@@ -139,7 +147,30 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /login
   fastify.post('/login', async (req, reply) => {
     const locale = getRequestLocale(req)
-    const { username, password } = req.body as { username: string; password: string }
+    const { username, passwordEnc, ts } = req.body as { username: string; passwordEnc: string; ts: number | string }
+
+    if (!username || !passwordEnc || ts === undefined || ts === null) {
+      return sendError(reply, locale, 400, '请求参数校验失败', 'VALIDATION_ERROR')
+    }
+
+    const tsNumber = typeof ts === 'string' ? parseInt(ts, 10) : ts
+    const now = Math.floor(Date.now() / 1000)
+    if (!Number.isFinite(tsNumber) || Math.abs(now - tsNumber) > 120) {
+      return sendError(reply, locale, 400, '登录请求已过期，请重试', 'LOGIN_TIMESTAMP_EXPIRED')
+    }
+
+    let decrypted: string
+    try {
+      decrypted = decryptWithPrivateKey(passwordEnc)
+    } catch {
+      return sendError(reply, locale, 400, '密码加密数据无效', 'PASSWORD_ENCRYPTION_INVALID')
+    }
+
+    const [password, tsInPayload] = decrypted.split(':')
+    const tsInPayloadNum = tsInPayload ? parseInt(tsInPayload, 10) : NaN
+    if (!password || !Number.isFinite(tsInPayloadNum) || tsInPayloadNum !== tsNumber) {
+      return sendError(reply, locale, 400, '密码加密数据无效', 'PASSWORD_ENCRYPTION_INVALID')
+    }
 
     const user = db.select().from(users).where(eq(users.username, username)).get()
     if (!user) return sendError(reply, locale, 401, '用户名或密码错误', 'INVALID_CREDENTIALS')
@@ -334,8 +365,42 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   // PUT /me/password
   fastify.put('/me/password', { preHandler: fastify.authenticate }, async (req, reply) => {
     const locale = getRequestLocale(req)
-    const { currentPassword, newPassword, confirmPassword } = req.body as {
-      currentPassword: string; newPassword: string; confirmPassword: string
+    const { currentPasswordEnc, newPasswordEnc, ts } = req.body as {
+      currentPasswordEnc: string; newPasswordEnc: string; ts: number | string
+    }
+
+    if (!currentPasswordEnc || !newPasswordEnc || ts === undefined || ts === null) {
+      return sendError(reply, locale, 400, '请求参数校验失败', 'VALIDATION_ERROR')
+    }
+
+    const tsNumber = typeof ts === 'string' ? parseInt(ts, 10) : ts
+    const now = Math.floor(Date.now() / 1000)
+    if (!Number.isFinite(tsNumber) || Math.abs(now - tsNumber) > 120) {
+      return sendError(reply, locale, 400, '请求已过期，请重试', 'LOGIN_TIMESTAMP_EXPIRED')
+    }
+
+    let currentPlain: string
+    let nextPlain: string
+    try {
+      currentPlain = decryptWithPrivateKey(currentPasswordEnc)
+      nextPlain = decryptWithPrivateKey(newPasswordEnc)
+    } catch {
+      return sendError(reply, locale, 400, '密码加密数据无效', 'PASSWORD_ENCRYPTION_INVALID')
+    }
+
+    const [currentPassword, tsCurrent] = currentPlain.split(':')
+    const [newPassword, tsNext] = nextPlain.split(':')
+    const tsCurrentNum = tsCurrent ? parseInt(tsCurrent, 10) : NaN
+    const tsNextNum = tsNext ? parseInt(tsNext, 10) : NaN
+    if (
+      !currentPassword ||
+      !newPassword ||
+      !Number.isFinite(tsCurrentNum) ||
+      !Number.isFinite(tsNextNum) ||
+      tsCurrentNum !== tsNumber ||
+      tsNextNum !== tsNumber
+    ) {
+      return sendError(reply, locale, 400, '密码加密数据无效', 'PASSWORD_ENCRYPTION_INVALID')
     }
 
     const user = db.select().from(users).where(eq(users.id, req.user.userId)).get()
@@ -347,9 +412,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     const sameAsOld = await bcrypt.compare(newPassword, user.passwordHash)
     if (sameAsOld) return sendError(reply, locale, 422, '新旧密码不能相同', 'SAME_PASSWORD')
 
-    if (newPassword !== confirmPassword) {
-      return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', { confirmPassword: '两次密码不一致' })
-    }
+    // confirmPassword 逻辑交由前端校验，新接口不再接收该字段
     if (!validatePassword(newPassword)) {
       return sendError(reply, locale, 422, '请求参数校验失败', 'VALIDATION_ERROR', { newPassword: '密码须为8-64字符，且同时包含字母和数字' })
     }

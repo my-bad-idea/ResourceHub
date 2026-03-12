@@ -90,3 +90,10 @@ export const initialized = sqliteTable('initialized', {
   id:   text('id').primaryKey().default('default'),
   done: integer('done', { mode: 'boolean' }).notNull().default(false)
 })
+
+export const rsaKeys = sqliteTable('rsa_keys', {
+  id:        text('id').primaryKey().default('current'),
+  publicKey: text('public_key').notNull(),
+  privateKey:text('private_key').notNull(),
+  createdAt: integer('created_at').notNull(),
+})

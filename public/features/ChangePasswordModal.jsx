@@ -35,12 +35,14 @@ function ChangePasswordModal({ isOpen, onClose }) {
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setLoading(true);
     try {
+      const { passwordEnc: currentPasswordEnc, ts } = await window.security.encryptPasswordWithTs(form.currentPassword);
+      const { passwordEnc: newPasswordEnc } = await window.security.encryptPasswordWithTs(form.newPassword);
       const { ok, data } = await request('/api/auth/me/password', {
         method: 'PUT',
         body: JSON.stringify({
-          currentPassword: form.currentPassword,
-          newPassword: form.newPassword,
-          confirmPassword: form.confirmPassword,
+          currentPasswordEnc,
+          newPasswordEnc,
+          ts,
         }),
       });
       if (ok) {
