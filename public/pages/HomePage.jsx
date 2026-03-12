@@ -241,7 +241,9 @@ function HomePage() {
         previewNames,
         previewTags,
       };
-    });
+    })
+      .sort((a, b) => (b.resourceCount || 0) - (a.resourceCount || 0) || (a.name || '').localeCompare(b.name || '', 'zh-CN'))
+      .slice(0, 5);
   }, [resolvedCategories, resources, categoryCountMap]);
   const overviewPopularResources = React.useMemo(
     () => [...resources].sort((a, b) => (b.visitCount || 0) - (a.visitCount || 0)).slice(0, 4),
@@ -253,9 +255,9 @@ function HomePage() {
   );
   const overviewQuickAccessEntries = currentUser
     ? [
-        { key: 'favorites', label: '我的收藏', count: favorites.length, note: '快速回到常用资源', emptyNote: '还没有收藏资源', filter: 'favorites', Icon: Heart },
-        { key: 'history', label: '最近访问', count: history.length, note: '继续上次浏览路径', emptyNote: '还没有访问记录', filter: 'history', Icon: Clock },
-        { key: 'mine', label: '我创建的', count: mine.length, note: '维护自己的内容', emptyNote: '还没有创建内容', filter: 'mine', Icon: FileText },
+        { key: 'favorites', label: '我的收藏', count: favorites.length, note: '快速回到常用资源', emptyNote: '还没有收藏资源', filter: 'favorites', accent: 'var(--brand)', Icon: Heart },
+        { key: 'history', label: '最近访问', count: history.length, note: '继续上次浏览路径', emptyNote: '还没有访问记录', filter: 'history', accent: 'var(--success)', Icon: Clock },
+        { key: 'mine', label: '我创建的', count: mine.length, note: '维护自己的内容', emptyNote: '还没有创建内容', filter: 'mine', accent: 'var(--brand-strong)', Icon: FileText },
       ]
     : [];
   const overviewSections = [
@@ -1124,6 +1126,10 @@ function HomeOverview({
       ? '0 10px 22px color-mix(in srgb, var(--text-primary) 4%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--control-border) 18%, transparent), inset 0 1px 0 color-mix(in srgb, white 50%, transparent)'
       : '0 12px 24px color-mix(in srgb, var(--bg-primary) 18%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 18%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 28%, transparent)',
   };
+  const [hoveredQuickAccessKey, setHoveredQuickAccessKey] = React.useState(null);
+  const [hoveredCategoryId, setHoveredCategoryId] = React.useState(null);
+  const interactiveCardTransition = 'transform 170ms, border-color 170ms, background 170ms, box-shadow 170ms';
+  const interactiveCardLift = 'translateY(-2px)';
   const quickAccessEmptySurfaceStyle = {
     border: isLightTheme
       ? '1px solid color-mix(in srgb, var(--control-border) 42%, var(--surface-tint))'
@@ -1358,12 +1364,12 @@ function HomeOverview({
                       ? 'color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted))'
                       : 'color-mix(in srgb, var(--surface-elevated) 82%, var(--bg-primary))')
                     : (isLightTheme
-                      ? 'color-mix(in srgb, var(--surface-elevated) 98%, var(--control-bg-muted))'
-                      : 'color-mix(in srgb, var(--surface-elevated) 88%, var(--bg-primary))'),
+                      ? `linear-gradient(180deg, color-mix(in srgb, ${card.accent} 10%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--control-bg-muted)) 100%)`
+                      : `linear-gradient(180deg, color-mix(in srgb, ${card.accent} 16%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)`),
                   color: 'var(--text-primary)',
                   boxShadow: isZeroMetric
                     ? 'none'
-                    : 'inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 52%, transparent)',
+                    : `inset 0 1px 0 color-mix(in srgb, ${card.accent} 14%, transparent)`,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
@@ -1442,16 +1448,37 @@ function HomeOverview({
                   type="button"
                   data-rh-overview-quick-access={entry.key}
                   data-rh-overview-quick-access-empty={isEmptyEntry ? 'true' : 'false'}
+                  onMouseEnter={() => setHoveredQuickAccessKey(entry.key)}
+                  onMouseLeave={() => setHoveredQuickAccessKey(null)}
                   onClick={() => onSelectQuickAccess(entry.filter)}
                   style={{
                     minHeight: '88px',
                     padding: '13px',
                     borderRadius: '16px',
-                    ...(isEmptyEntry ? quickAccessEmptySurfaceStyle : quickAccessSurfaceStyle),
+                    ...((isEmptyEntry ? quickAccessEmptySurfaceStyle : quickAccessSurfaceStyle)),
+                    border: isEmptyEntry
+                      ? quickAccessEmptySurfaceStyle.border
+                      : (hoveredQuickAccessKey === entry.key
+                        ? (isLightTheme
+                          ? `1px solid color-mix(in srgb, ${entry.accent || 'var(--brand)'} 42%, var(--control-border))`
+                          : `1px solid color-mix(in srgb, ${entry.accent || 'var(--brand)'} 48%, var(--border-strong))`)
+                        : quickAccessSurfaceStyle.border),
+                    background: isEmptyEntry
+                      ? quickAccessEmptySurfaceStyle.background
+                      : (isLightTheme
+                        ? `linear-gradient(180deg, color-mix(in srgb, ${entry.accent || 'var(--brand)'} ${hoveredQuickAccessKey === entry.key ? 14 : 8}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 95%, var(--control-bg-muted)) 100%)`
+                        : `linear-gradient(180deg, color-mix(in srgb, ${entry.accent || 'var(--brand)'} ${hoveredQuickAccessKey === entry.key ? 20 : 12}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)`),
                     display: 'grid',
                     gap: '6px',
                     textAlign: 'left',
                     cursor: 'pointer',
+                    transform: !isEmptyEntry && hoveredQuickAccessKey === entry.key ? interactiveCardLift : 'translateY(0)',
+                    boxShadow: !isEmptyEntry && hoveredQuickAccessKey === entry.key
+                      ? (isLightTheme
+                        ? `0 14px 26px color-mix(in srgb, ${entry.accent || 'var(--brand)'} 20%, transparent)`
+                        : `0 16px 30px color-mix(in srgb, ${entry.accent || 'var(--brand)'} 22%, transparent)`)
+                      : (isEmptyEntry ? quickAccessEmptySurfaceStyle.boxShadow : quickAccessSurfaceStyle.boxShadow),
+                    transition: interactiveCardTransition,
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
@@ -1468,7 +1495,7 @@ function HomeOverview({
                       style={{
                         fontSize: '20px',
                         fontWeight: 800,
-                        color: isEmptyEntry ? 'var(--text-secondary)' : 'var(--brand-strong)',
+                        color: isEmptyEntry ? 'var(--text-secondary)' : (entry.accent || 'var(--brand-strong)'),
                         opacity: isEmptyEntry ? 0.78 : 1,
                       }}
                     >
@@ -1505,6 +1532,8 @@ function HomeOverview({
               key={category.id}
               type="button"
               data-rh-overview-category-card={String(category.id)}
+              onMouseEnter={() => setHoveredCategoryId(category.id)}
+              onMouseLeave={() => setHoveredCategoryId(null)}
               onClick={() => onSelectCategory(category.id)}
               style={{
                 minHeight: '104px',
@@ -1512,15 +1541,22 @@ function HomeOverview({
                 borderRadius: '16px',
                 ...surfaceStyle,
                 border: isLightTheme
-                  ? `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} 18%, var(--control-border))`
-                  : `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} 24%, var(--border))`,
+                  ? `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 34 : 18}%, var(--control-border))`
+                  : `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 40 : 24}%, var(--border))`,
                 background: isLightTheme
-                  ? `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} 8%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint)) 100%)`
-                  : `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} 12%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 100%)`,
+                  ? `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 16 : 8}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint)) 100%)`
+                  : `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 22 : 12}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 100%)`,
                 display: 'grid',
                 gap: '8px',
                 textAlign: 'left',
                 cursor: 'pointer',
+                transform: hoveredCategoryId === category.id ? interactiveCardLift : 'translateY(0)',
+                boxShadow: hoveredCategoryId === category.id
+                  ? (isLightTheme
+                    ? '0 14px 28px color-mix(in srgb, var(--text-primary) 8%, transparent)'
+                    : '0 16px 30px color-mix(in srgb, var(--bg-primary) 28%, transparent)')
+                  : surfaceStyle.boxShadow,
+                transition: interactiveCardTransition,
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
