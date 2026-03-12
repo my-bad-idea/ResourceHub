@@ -6,7 +6,7 @@ function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmText
   return React.createElement('div', {
     style: {
       position: 'fixed', inset: 0,
-      background: 'rgba(0,0,0,0.5)',
+      background: 'rgba(19,34,56,0.28)',
       zIndex: 1001,
       display: 'flex',
       alignItems: 'center',
@@ -17,9 +17,9 @@ function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmText
     React.createElement('div', {
       style: {
         width: '400px', maxWidth: '100%',
-        background: 'var(--bg-primary)',
+        background: 'var(--surface-elevated)',
         border: '1px solid var(--border)',
-        borderRadius: '12px',
+        borderRadius: '16px',
         boxShadow: 'var(--shadow-modal)',
         padding: '24px',
       }
@@ -28,7 +28,7 @@ function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmText
         React.createElement('div', {
           style: {
             width: '40px', height: '40px', borderRadius: '50%',
-            background: 'rgba(255,59,48,0.1)',
+            background: 'color-mix(in srgb, var(--danger) 10%, var(--surface-elevated))',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }
         }, React.createElement(AlertTriangle, { size: 20, style: { color: 'var(--danger)' } })),
@@ -47,8 +47,9 @@ function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmText
           disabled: loading,
           style: {
             padding: '8px 16px', border: '1px solid var(--border)',
-            background: 'var(--bg-secondary)', color: 'var(--text-primary)',
-            borderRadius: '8px', cursor: 'pointer', fontSize: '14px',
+            background: 'var(--surface-elevated)', color: 'var(--text-primary)',
+            borderRadius: '10px', cursor: 'pointer', fontSize: '14px',
+            boxShadow: 'var(--shadow-control)',
           }
         }, '取消'),
         React.createElement('button', {
@@ -57,9 +58,10 @@ function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmText
           style: {
             padding: '8px 16px', border: 'none',
             background: 'var(--danger)', color: '#fff',
-            borderRadius: '8px', cursor: loading ? 'not-allowed' : 'pointer',
+            borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer',
             fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px',
             opacity: loading ? 0.7 : 1,
+            boxShadow: '0 10px 20px color-mix(in srgb, var(--danger) 16%, transparent)',
           }
         },
           loading && React.createElement(Loader, {

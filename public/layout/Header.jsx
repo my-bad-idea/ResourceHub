@@ -39,10 +39,10 @@ function Header({ variant = 'default', showSearch = true }) {
   const isHomeVariant = variant === 'home';
   const isDarkTheme = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const baseControlBorderColor = isHomeVariant
-    ? 'color-mix(in srgb, var(--control-border) 82%, transparent)'
+    ? 'var(--control-border)'
     : 'var(--control-border)';
   const baseControlBackground = isHomeVariant
-    ? 'color-mix(in srgb, var(--control-bg) 82%, transparent)'
+    ? 'var(--surface-elevated)'
     : 'color-mix(in srgb, var(--control-bg) 94%, var(--control-bg-muted))';
   const baseControlShadow = isHomeVariant
     ? 'var(--shadow-control)'
@@ -52,7 +52,7 @@ function Header({ variant = 'default', showSearch = true }) {
   const menuOptionActive = 'color-mix(in srgb, var(--brand-soft) 82%, var(--control-bg))';
   const searchFieldBackground = isHomeVariant
     ? isDarkTheme
-      ? 'color-mix(in srgb, var(--surface-elevated) 82%, var(--control-bg-muted))'
+      ? 'color-mix(in srgb, var(--surface-elevated) 88%, var(--control-bg-muted))'
       : 'var(--surface-elevated)'
     : 'color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted))';
   const searchFieldFocusBackground = isHomeVariant
@@ -108,7 +108,8 @@ function Header({ variant = 'default', showSearch = true }) {
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
-            navigate('#/resources');
+            dispatch({ type: 'SET_HOME_MODE', mode: 'results' });
+            navigate('#/');
           }
         }}
         placeholder={isMobile ? '搜索资源...' : '搜索资源名称、描述、标签... (Ctrl+K)'}
@@ -152,7 +153,11 @@ function Header({ variant = 'default', showSearch = true }) {
         minWidth: 0,
         justifySelf: 'start',
       }}
-      onClick={() => navigate('#/')}
+      onClick={() => {
+        dispatch({ type: 'CLEAR_FILTERS' });
+        dispatch({ type: 'SET_HOME_MODE', mode: 'overview' });
+        navigate('#/');
+      }}
     >
       {config?.logoUrl ? (
         <img src={config.logoUrl} style={{ width: '34px', height: '34px', borderRadius: '10px', objectFit: 'contain', border: '1px solid color-mix(in srgb, var(--border-strong) 82%, var(--border))', background: 'var(--surface-elevated)', boxShadow: 'var(--shadow-card)' }} />

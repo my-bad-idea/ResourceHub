@@ -50,10 +50,12 @@ function HomePage({ pageType = 'overview' } = {}) {
     favorites,
     history,
     mine,
+    homeMode,
     theme,
   } = state;
   const isDarkTheme = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const isLightTheme = !isDarkTheme;
+  const { getCategoryTone } = window.helpers;
 
   const baseCardColumns = viewportWidth >= 1280 ? 4 : viewportWidth >= 960 ? 3 : viewportWidth >= 640 ? 2 : 1;
   const categoryCountMap = React.useMemo(() => {
@@ -83,19 +85,33 @@ function HomePage({ pageType = 'overview' } = {}) {
   }, [tags, tagCountMap]);
 
   const resolvedCategories = React.useMemo(() => {
-    if (Array.isArray(categories) && categories.length > 0) return categories;
+    if (Array.isArray(categories) && categories.length > 0) {
+      return categories.map((category) => {
+        const tone = getCategoryTone(category, category?.id);
+        return {
+          ...category,
+          color: tone.accent,
+          tone,
+        };
+      });
+    }
     const categoryMap = new Map();
     (resources || []).forEach((resource) => {
       if (resource.categoryId === null || resource.categoryId === undefined) return;
       if (categoryMap.has(resource.categoryId)) return;
-      categoryMap.set(resource.categoryId, {
+      const sourceCategory = {
         id: resource.categoryId,
         name: resource.categoryName || resource.category?.name || `分类 ${resource.categoryId}`,
-        color: resource.categoryColor || resource.category?.color || null,
+      };
+      const tone = getCategoryTone(sourceCategory, resource.categoryId);
+      categoryMap.set(resource.categoryId, {
+        ...sourceCategory,
+        color: tone.accent,
+        tone,
       });
     });
     return [...categoryMap.values()].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'));
-  }, [categories, resources]);
+  }, [categories, resources, getCategoryTone]);
 
   const categoryList = React.useMemo(() => {
     const totalCategory = { id: null, name: '全部', color: null, resourceCount: resources.length };
@@ -151,6 +167,9 @@ function HomePage({ pageType = 'overview' } = {}) {
     (searchQuery && searchQuery.trim())
   );
   const selectedCategoryItem = categoryList.find((item) => item.id === selectedCategory) || categoryList[0];
+  const selectedCategoryTone = selectedCategoryItem?.id !== null
+    ? (selectedCategoryItem?.tone || getCategoryTone(selectedCategoryItem, selectedCategoryItem?.id))
+    : null;
   const activeQuickAccess = quickAccessItems.find((item) => item.key === quickAccessFilter) || null;
   const sortOptions = React.useMemo(() => ([
     { value: 'hot', label: '按热度' },
@@ -207,7 +226,7 @@ function HomePage({ pageType = 'overview' } = {}) {
     return [...selectedFirst, ...remaining.slice(0, 4)];
   }, [mergedOrderedTags, selectedTagsList, showAllSidebarTags]);
   const hiddenSidebarTagCount = Math.max(mergedOrderedTags.length - visibleSidebarTags.length, 0);
-  const isOverviewMode = pageType !== 'results';
+  const isOverviewMode = pageType !== 'results' && homeMode !== 'results';
   const isResultsMode = !isOverviewMode;
   const visibleCategoryCount = resolvedCategories.length;
   const visibleTagCount = orderedTags.length;
@@ -216,19 +235,19 @@ function HomePage({ pageType = 'overview' } = {}) {
     : `${totalResourceCount} 个公开资源，覆盖 ${visibleCategoryCount} 个分类`;
   const metricCards = currentUser
     ? [
-        { key: 'total', label: '可见资源', value: totalResourceCount, note: '当前可访问入口', accent: 'var(--brand)' },
-        { key: 'categories', label: '资源分类', value: visibleCategoryCount, note: '按主题浏览入口', accent: 'var(--success)' },
-        { key: 'mine', label: '我的资源', value: mineResourceCount, note: '我创建与维护的内容', accent: 'var(--brand-strong)' },
+        { key: 'total', kind: 'summary', label: '可见资源', value: totalResourceCount, note: '当前可访问入口', accent: 'var(--brand)' },
+        { key: 'categories', kind: 'summary', label: '资源分类', value: visibleCategoryCount, note: '按主题浏览入口', accent: 'var(--brand)' },
+        { key: 'mine', kind: 'summary', label: '我的资源', value: mineResourceCount, note: '我创建与维护的内容', accent: 'var(--brand)' },
       ]
     : [
-        { key: 'public', label: '公开资源', value: totalResourceCount, note: '无需登录即可访问', accent: 'var(--brand)' },
-        { key: 'categories', label: '资源分类', value: visibleCategoryCount, note: '按主题浏览入口', accent: 'var(--success)' },
-        { key: 'tags', label: '常用标签', value: visibleTagCount, note: '作为补充过滤条件', accent: 'var(--brand-strong)' },
+        { key: 'public', kind: 'summary', label: '公开资源', value: totalResourceCount, note: '无需登录即可访问', accent: 'var(--brand)' },
+        { key: 'categories', kind: 'summary', label: '资源分类', value: visibleCategoryCount, note: '按主题浏览入口', accent: 'var(--brand)' },
+        { key: 'tags', kind: 'summary', label: '常用标签', value: visibleTagCount, note: '作为补充过滤条件', accent: 'var(--brand)' },
       ];
   const trafficCards = [
-    { key: 'visits-total', label: '总访问量', value: trafficMetrics.totalVisits, note: '页面累计访问量', accent: 'var(--brand)' },
-    { key: 'visits-month', label: '近30日访问', value: trafficMetrics.monthlyVisits, note: '近 30 天记录', accent: 'var(--success)' },
-    { key: 'visits-day', label: '近24小时访问', value: trafficMetrics.dailyVisits, note: '最近一天活跃', accent: 'var(--brand-strong)' },
+    { key: 'visits-total', kind: 'traffic', label: '总访问量', value: trafficMetrics.totalVisits, note: '页面累计访问量', accent: 'var(--brand)' },
+    { key: 'visits-month', kind: 'traffic', label: '近30日访问', value: trafficMetrics.monthlyVisits, note: '近 30 天记录', accent: 'var(--brand)' },
+    { key: 'visits-day', kind: 'traffic', label: '近24小时访问', value: trafficMetrics.dailyVisits, note: '最近一天活跃', accent: 'var(--brand)' },
   ];
   const categoryHighlights = React.useMemo(() => {
     return resolvedCategories.map((category) => {
@@ -275,7 +294,7 @@ function HomePage({ pageType = 'overview' } = {}) {
           note: '继续上次浏览路径',
           emptyNote: '还没有访问记录，先随便逛一逛',
           filter: 'history',
-          accent: 'var(--success)',
+          accent: 'var(--brand)',
           Icon: Clock,
         },
         {
@@ -285,16 +304,49 @@ function HomePage({ pageType = 'overview' } = {}) {
           note: '维护自己的内容',
           emptyNote: '还没有创建内容，可以尝试新增一个资源',
           filter: 'mine',
-          accent: 'var(--brand-strong)',
+          accent: 'var(--brand)',
           Icon: FileText,
         },
       ]
     : [];
   const overviewSections = [
-    { key: 'popular', title: '热门资源', description: '按访问热度挑选常用入口。', resources: overviewPopularResources, actionLabel: '查看更多', action: () => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/resources'); } },
-    { key: 'recent', title: '最近更新', description: '快速查看最近维护或新增的内容。', resources: overviewRecentResources, actionLabel: '查看更多', action: () => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/resources'); } },
+    {
+      key: 'popular',
+      title: '热门资源',
+      description: '按访问热度挑选常用入口。',
+      resources: overviewPopularResources,
+      actionLabel: '查看更多',
+      action: () => {
+        dispatch({ type: 'CLEAR_FILTERS' });
+        dispatch({ type: 'SET_HOME_MODE', mode: 'results' });
+        navigate('#/');
+      },
+    },
+    {
+      key: 'recent',
+      title: '最近更新',
+      description: '快速查看最近维护或新增的内容。',
+      resources: overviewRecentResources,
+      actionLabel: '查看更多',
+      action: () => {
+        dispatch({ type: 'CLEAR_FILTERS' });
+        dispatch({ type: 'SET_HOME_MODE', mode: 'results' });
+        navigate('#/');
+      },
+    },
     ...(currentUser && mine.length > 0
-      ? [{ key: 'mine', title: '我的资源', description: '继续维护你创建和拥有的资源。', resources: mine.slice(0, 4), actionLabel: '查看更多', action: () => dispatch({ type: 'SET_QUICK_ACCESS_FILTER', filter: 'mine' }) }]
+      ? [{
+          key: 'mine',
+          title: '我的资源',
+          description: '继续维护你创建和拥有的资源。',
+          resources: mine.slice(0, 4),
+          actionLabel: '查看更多',
+          action: () => {
+            dispatch({ type: 'SET_HOME_MODE', mode: 'results' });
+            dispatch({ type: 'SET_QUICK_ACCESS_FILTER', filter: 'mine' });
+            navigate('#/');
+          },
+        }]
       : []),
   ].filter((section) => section.resources.length > 0);
   React.useEffect(() => {
@@ -367,14 +419,14 @@ function HomePage({ pageType = 'overview' } = {}) {
   const resultsTopPadding = isMobile ? '12px' : '16px';
   const sharedTopPanelStyle = {
     border: isLightTheme
-      ? '1px solid color-mix(in srgb, var(--control-border) 44%, var(--surface-tint))'
-      : '1px solid color-mix(in srgb, var(--border-strong) 42%, var(--surface-tint))',
+      ? '1px solid var(--border)'
+      : '1px solid color-mix(in srgb, var(--border-strong) 72%, var(--border))',
     background: isLightTheme
-      ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 94%, var(--surface-tint)) 100%)'
-      : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 92%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 88%, var(--bg-primary)) 100%)',
+      ? 'var(--surface-elevated)'
+      : 'color-mix(in srgb, var(--surface-elevated) 94%, var(--bg-primary))',
     boxShadow: isLightTheme
-      ? '0 14px 30px color-mix(in srgb, var(--text-primary) 5%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--control-border) 18%, transparent), inset 0 1px 0 color-mix(in srgb, white 56%, transparent)'
-      : '0 16px 32px color-mix(in srgb, var(--bg-primary) 22%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 28%, transparent)',
+      ? '0 8px 20px color-mix(in srgb, var(--text-primary) 4%, transparent)'
+      : '0 14px 26px color-mix(in srgb, var(--bg-primary) 18%, transparent)',
   };
   const resultsHeadingShellStyle = {
     position: 'relative',
@@ -392,14 +444,14 @@ function HomePage({ pageType = 'overview' } = {}) {
   };
   const resultsContentPanelStyle = {
     border: isLightTheme
-      ? '1px solid color-mix(in srgb, var(--control-border) 24%, var(--surface-tint))'
-      : '1px solid color-mix(in srgb, var(--border-strong) 28%, var(--surface-tint))',
+      ? '1px solid var(--border)'
+      : '1px solid color-mix(in srgb, var(--border-strong) 74%, var(--border))',
     background: isLightTheme
-      ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 95%, var(--control-bg-muted)) 100%)'
-      : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 84%, var(--bg-primary)) 100%)',
+      ? 'var(--surface-elevated)'
+      : 'color-mix(in srgb, var(--surface-elevated) 94%, var(--bg-primary))',
     boxShadow: isLightTheme
-      ? '0 10px 22px color-mix(in srgb, var(--text-primary) 4%, transparent), inset 0 1px 0 color-mix(in srgb, white 42%, transparent)'
-      : '0 14px 26px color-mix(in srgb, var(--bg-primary) 18%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 18%, transparent)',
+      ? 'var(--shadow-card)'
+      : '0 14px 26px color-mix(in srgb, var(--bg-primary) 18%, transparent)',
   };
 
   React.useEffect(() => {
@@ -530,19 +582,19 @@ function HomePage({ pageType = 'overview' } = {}) {
     padding: compact ? '0 12px' : '0 14px',
     borderRadius: '12px',
     border: tone === 'brand'
-      ? '1px solid color-mix(in srgb, var(--brand) 42%, var(--control-border))'
+      ? '1px solid var(--brand)'
       : tone === 'ghost'
         ? '1px solid transparent'
-        : '1px solid color-mix(in srgb, var(--control-border) 72%, transparent)',
+        : '1px solid var(--control-border)',
     background: tone === 'brand'
-      ? 'color-mix(in srgb, var(--brand-soft) 52%, var(--surface-elevated))'
+      ? 'var(--brand)'
       : tone === 'ghost'
         ? 'transparent'
-        : 'color-mix(in srgb, var(--surface-elevated) 88%, var(--control-bg-muted))',
-    color: tone === 'brand' ? 'var(--brand-strong)' : tone === 'ghost' ? 'var(--text-secondary)' : 'var(--text-primary)',
+        : 'var(--surface-elevated)',
+    color: tone === 'brand' ? '#FFFFFF' : tone === 'ghost' ? 'var(--text-secondary)' : 'var(--text-primary)',
     fontSize: compact ? '12px' : '13px',
     fontWeight: tone === 'brand' ? 700 : 600,
-    boxShadow: tone === 'brand' ? '0 8px 16px color-mix(in srgb, var(--brand) 14%, transparent)' : 'none',
+    boxShadow: tone === 'brand' ? '0 10px 20px color-mix(in srgb, var(--brand) 16%, transparent)' : 'var(--shadow-control)',
     transition: 'border-color 150ms, background 150ms, color 150ms, box-shadow 150ms',
     outline: 'none',
     appearance: 'none',
@@ -563,6 +615,7 @@ function HomePage({ pageType = 'overview' } = {}) {
     background: 'transparent',
     border: '1px solid transparent',
     fontWeight: 600,
+    boxShadow: 'none',
   });
   const desktopViewModeTriggerStyle = {
     ...desktopToolbarControlStyle,
@@ -575,13 +628,13 @@ function HomePage({ pageType = 'overview' } = {}) {
     minWidth: '104px',
   };
   const activeFilterChipStyle = (tone = 'neutral') => {
-    if (tone === 'category' && selectedCategoryItem?.color) {
+    if (tone === 'category' && selectedCategoryTone?.accent) {
       return {
         ...chipStyle(false, true),
         cursor: 'default',
-        color: selectedCategoryItem.color,
-        border: `1px solid color-mix(in srgb, ${selectedCategoryItem.color} 28%, var(--control-border))`,
-        background: `color-mix(in srgb, ${selectedCategoryItem.color} 12%, var(--control-bg))`,
+        color: selectedCategoryTone.accent,
+        border: `1px solid color-mix(in srgb, ${selectedCategoryTone.accent} 24%, var(--control-border))`,
+        background: `color-mix(in srgb, ${selectedCategoryTone.accent} 10%, var(--surface-elevated))`,
         boxShadow: 'none',
       };
     }
@@ -763,10 +816,10 @@ function HomePage({ pageType = 'overview' } = {}) {
 
   const handleSummaryActionHover = (event, hovered) => {
     event.currentTarget.style.background = hovered
-      ? 'color-mix(in srgb, var(--brand-soft) 54%, var(--control-bg))'
+      ? 'color-mix(in srgb, var(--brand-soft) 78%, var(--surface-elevated))'
       : 'transparent';
     event.currentTarget.style.borderColor = hovered
-      ? 'color-mix(in srgb, var(--brand) 22%, transparent)'
+      ? 'color-mix(in srgb, var(--brand) 18%, var(--control-border))'
       : 'transparent';
     event.currentTarget.style.color = hovered ? 'var(--brand-strong)' : 'var(--text-primary)';
   };
@@ -813,19 +866,22 @@ function HomePage({ pageType = 'overview' } = {}) {
               inlineMetrics={viewportWidth >= 960}
               onBrowseAll={() => {
                 dispatch({ type: 'CLEAR_FILTERS' });
+                dispatch({ type: 'SET_HOME_MODE', mode: 'results' });
                 setShowSortMenu(false);
-                navigate('#/resources');
+                navigate('#/');
               }}
               onCreate={currentUser ? openCreate : null}
               onSelectCategory={(categoryId) => {
                 dispatch({ type: 'CLEAR_FILTERS' });
+                dispatch({ type: 'SET_HOME_MODE', mode: 'results' });
                 dispatch({ type: 'SET_CATEGORY', category: categoryId });
-                navigate('#/resources');
+                navigate('#/');
               }}
               onSelectQuickAccess={(filter) => {
                 dispatch({ type: 'CLEAR_FILTERS' });
+                dispatch({ type: 'SET_HOME_MODE', mode: 'results' });
                 dispatch({ type: 'SET_QUICK_ACCESS_FILTER', filter });
-                navigate('#/resources');
+                navigate('#/');
               }}
             />
           ) : (
@@ -974,7 +1030,11 @@ function HomePage({ pageType = 'overview' } = {}) {
                       ) : (
                         <button
                           data-rh-home-overview-return
-                          onClick={() => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/'); }}
+                          onClick={() => {
+                            dispatch({ type: 'CLEAR_FILTERS' });
+                            dispatch({ type: 'SET_HOME_MODE', mode: 'overview' });
+                            navigate('#/');
+                          }}
                           onMouseEnter={(event) => handleSummaryActionHover(event, true)}
                           onMouseLeave={(event) => handleSummaryActionHover(event, false)}
                           style={summaryActionButtonStyle(isMobile)}
@@ -1141,38 +1201,38 @@ function HomeOverview({
 }) {
   const surfaceStyle = {
     border: isLightTheme
-      ? '1px solid color-mix(in srgb, var(--control-border) 18%, transparent)'
-      : '1px solid color-mix(in srgb, var(--border-strong) 24%, var(--border))',
+      ? '1px solid color-mix(in srgb, var(--control-border) 78%, transparent)'
+      : '1px solid color-mix(in srgb, var(--border-strong) 42%, var(--border))',
     background: isLightTheme
-      ? 'color-mix(in srgb, var(--surface-elevated) 97%, var(--surface-tint))'
-      : 'color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint))',
+      ? 'var(--surface-elevated)'
+      : 'color-mix(in srgb, var(--surface-elevated) 94%, var(--bg-primary))',
     boxShadow: isLightTheme
-      ? '0 12px 26px color-mix(in srgb, var(--text-primary) 4%, transparent)'
+      ? '0 10px 24px color-mix(in srgb, var(--text-primary) 5%, transparent)'
       : '0 14px 28px color-mix(in srgb, var(--bg-primary) 20%, transparent)',
   };
   const heroSurfaceStyle = {
     ...surfaceStyle,
     border: isLightTheme
-      ? '1px solid color-mix(in srgb, var(--control-border) 44%, var(--surface-tint))'
-      : '1px solid color-mix(in srgb, var(--border-strong) 42%, var(--surface-tint))',
+      ? '1px solid color-mix(in srgb, var(--control-border) 82%, transparent)'
+      : '1px solid color-mix(in srgb, var(--border-strong) 44%, var(--border))',
     background: isLightTheme
-      ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 94%, var(--surface-tint)) 100%)'
-      : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 92%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 88%, var(--bg-primary)) 100%)',
+      ? 'var(--surface-elevated)'
+      : 'color-mix(in srgb, var(--surface-elevated) 94%, var(--bg-primary))',
     boxShadow: isLightTheme
-      ? '0 14px 30px color-mix(in srgb, var(--text-primary) 5%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--control-border) 18%, transparent), inset 0 1px 0 color-mix(in srgb, white 56%, transparent)'
-      : '0 16px 32px color-mix(in srgb, var(--bg-primary) 22%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 28%, transparent)',
+      ? '0 12px 28px color-mix(in srgb, var(--text-primary) 5%, transparent)'
+      : '0 16px 32px color-mix(in srgb, var(--bg-primary) 22%, transparent)',
   };
   const quickAccessSurfaceStyle = {
     ...surfaceStyle,
     border: isLightTheme
-      ? '1px solid color-mix(in srgb, var(--control-border) 46%, var(--surface-tint))'
-      : '1px solid color-mix(in srgb, var(--border-strong) 42%, var(--surface-tint))',
+      ? '1px solid color-mix(in srgb, var(--control-border) 82%, transparent)'
+      : '1px solid color-mix(in srgb, var(--border-strong) 44%, var(--border))',
     background: isLightTheme
-      ? 'color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint))'
-      : 'color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint))',
+      ? 'var(--surface-elevated)'
+      : 'color-mix(in srgb, var(--surface-elevated) 94%, var(--bg-primary))',
     boxShadow: isLightTheme
-      ? '0 10px 22px color-mix(in srgb, var(--text-primary) 4%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--control-border) 18%, transparent), inset 0 1px 0 color-mix(in srgb, white 50%, transparent)'
-      : '0 12px 24px color-mix(in srgb, var(--bg-primary) 18%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 18%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 28%, transparent)',
+      ? '0 10px 20px color-mix(in srgb, var(--text-primary) 4%, transparent)'
+      : '0 12px 24px color-mix(in srgb, var(--bg-primary) 18%, transparent)',
   };
   const [hoveredQuickAccessKey, setHoveredQuickAccessKey] = React.useState(null);
   const [hoveredCategoryId, setHoveredCategoryId] = React.useState(null);
@@ -1180,57 +1240,49 @@ function HomeOverview({
   const interactiveCardLift = 'translateY(-2px)';
   const quickAccessEmptySurfaceStyle = {
     border: isLightTheme
-      ? '1px solid color-mix(in srgb, var(--control-border) 42%, var(--surface-tint))'
-      : '1px solid color-mix(in srgb, var(--border-strong) 36%, var(--surface-tint))',
+      ? '1px solid color-mix(in srgb, var(--control-border) 72%, transparent)'
+      : '1px solid color-mix(in srgb, var(--border-strong) 34%, var(--border))',
     background: isLightTheme
-      ? 'color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted))'
-      : 'color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary))',
+      ? 'color-mix(in srgb, var(--surface-elevated) 96%, var(--control-bg-muted))'
+      : 'color-mix(in srgb, var(--surface-elevated) 88%, var(--bg-primary))',
     boxShadow: isLightTheme
-      ? '0 8px 16px color-mix(in srgb, var(--text-primary) 2%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--control-border) 16%, transparent), inset 0 1px 0 color-mix(in srgb, white 44%, transparent)'
-      : '0 10px 18px color-mix(in srgb, var(--bg-primary) 14%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 20%, transparent)',
+      ? '0 8px 16px color-mix(in srgb, var(--text-primary) 3%, transparent)'
+      : '0 10px 18px color-mix(in srgb, var(--bg-primary) 14%, transparent)',
   };
   const secondaryButtonStyle = {
     minHeight: '36px',
     minWidth: '98px',
     padding: '0 14px',
     borderRadius: '12px',
-    border: '1px solid color-mix(in srgb, var(--control-border) 72%, transparent)',
-    background: 'color-mix(in srgb, var(--surface-elevated) 90%, var(--control-bg-muted))',
+    border: '1px solid color-mix(in srgb, var(--control-border) 82%, transparent)',
+    background: 'transparent',
     color: 'var(--text-primary)',
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: 600,
-    boxShadow: 'none',
+    boxShadow: '0 1px 2px color-mix(in srgb, var(--text-primary) 3%, transparent)',
   };
   const resultsEntryButtonStyle = {
     minHeight: '32px',
     padding: '0 11px',
     borderRadius: '11px',
-    border: '1px solid color-mix(in srgb, var(--control-border) 68%, transparent)',
-    background: 'color-mix(in srgb, var(--surface-elevated) 88%, var(--control-bg-muted))',
+    border: '1px solid color-mix(in srgb, var(--control-border) 76%, transparent)',
+    background: 'transparent',
     color: 'var(--text-primary)',
     cursor: 'pointer',
     fontSize: '12px',
     fontWeight: 600,
     boxShadow: 'none',
   };
-  const primaryButtonBorder = isLightTheme
-    ? '1px solid color-mix(in srgb, var(--brand) 54%, var(--control-border))'
-    : '1px solid color-mix(in srgb, var(--brand) 62%, var(--border-strong))';
-  const primaryButtonBackground = isLightTheme
-    ? 'linear-gradient(135deg, color-mix(in srgb, var(--brand-soft) 92%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--brand-soft) 72%, var(--surface-elevated)) 56%, color-mix(in srgb, var(--brand) 20%, var(--brand-soft)) 100%)'
-    : 'linear-gradient(135deg, color-mix(in srgb, var(--brand) 34%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--brand-soft) 78%, var(--surface-elevated)) 100%)';
-  const primaryButtonHoverBorder = isLightTheme
-    ? '1px solid color-mix(in srgb, var(--brand) 72%, var(--control-border))'
-    : '1px solid color-mix(in srgb, var(--brand) 78%, var(--border-strong))';
-  const primaryButtonHoverBackground = isLightTheme
-    ? 'linear-gradient(135deg, color-mix(in srgb, var(--brand-soft) 88%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--brand-soft) 64%, var(--surface-elevated)) 54%, color-mix(in srgb, var(--brand) 28%, var(--brand-soft)) 100%)'
-    : 'linear-gradient(135deg, color-mix(in srgb, var(--brand) 42%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--brand-soft) 72%, var(--surface-elevated)) 100%)';
+  const primaryButtonBorder = '1px solid color-mix(in srgb, var(--brand) 88%, transparent)';
+  const primaryButtonBackground = 'var(--brand)';
+  const primaryButtonHoverBorder = '1px solid color-mix(in srgb, var(--brand-strong) 92%, transparent)';
+  const primaryButtonHoverBackground = 'var(--brand-strong)';
   const primaryButtonShadow = isLightTheme
-    ? '0 12px 24px color-mix(in srgb, var(--brand) 18%, transparent)'
-    : '0 14px 26px color-mix(in srgb, var(--brand) 16%, transparent)';
+    ? '0 12px 24px color-mix(in srgb, var(--brand) 26%, transparent)'
+    : '0 14px 26px color-mix(in srgb, var(--brand) 18%, transparent)';
   const primaryButtonHoverShadow = isLightTheme
-    ? '0 16px 28px color-mix(in srgb, var(--brand) 24%, transparent)'
+    ? '0 16px 28px color-mix(in srgb, var(--brand) 30%, transparent)'
     : '0 18px 32px color-mix(in srgb, var(--brand) 22%, transparent)';
   const primaryButtonStyle = {
     minHeight: '38px',
@@ -1239,7 +1291,7 @@ function HomeOverview({
     borderRadius: '13px',
     border: primaryButtonBorder,
     background: primaryButtonBackground,
-    color: 'var(--brand-strong)',
+    color: '#FFFFFF',
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: 800,
@@ -1392,13 +1444,13 @@ function HomeOverview({
           {metrics.map((card, index) => {
             const isZeroMetric = Number(card.value) === 0;
             const displayValue = isZeroMetric ? '暂无数据' : card.value;
-            const dotColors = (window.helpers && window.helpers.COLOR_POOL) || ['#5856D6', '#FF9500', '#34C759', '#FF3B30', '#0071E3', '#FF2D55', '#AF52DE', '#00C7BE'];
-            const dotAccent = dotColors[index % dotColors.length];
+            const cardAccent = card.accent || 'var(--brand)';
 
             return (
               <div
                 key={card.key}
-                data-rh-home-metric-card={card.key}
+                data-rh-home-metric-card={card.kind === 'summary' ? card.key : undefined}
+                data-rh-home-traffic-card={card.kind === 'traffic' ? card.key : undefined}
                 data-rh-home-metric-zero={isZeroMetric ? 'true' : 'false'}
                 style={{
                   display: 'grid',
@@ -1407,9 +1459,12 @@ function HomeOverview({
                   minHeight: heroMetricMinHeight,
                   padding: heroMetricPadding,
                   borderRadius: '16px',
+                  borderTop: isZeroMetric
+                    ? '2px solid color-mix(in srgb, var(--control-border) 72%, transparent)'
+                    : `2px solid ${cardAccent}`,
                   border: isZeroMetric
-                    ? '1px solid color-mix(in srgb, var(--control-border) 42%, transparent)'
-                    : '1px solid color-mix(in srgb, var(--control-border) 62%, transparent)',
+                    ? '1px solid color-mix(in srgb, var(--control-border) 68%, transparent)'
+                    : '1px solid color-mix(in srgb, var(--control-border) 78%, transparent)',
                   background: isZeroMetric
                     ? (isLightTheme
                       ? 'color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted))'
@@ -1421,7 +1476,7 @@ function HomeOverview({
                   boxShadow: isZeroMetric
                     ? 'none'
                     : (isLightTheme
-                      ? '0 1px 3px color-mix(in srgb, var(--text-primary) 6%, transparent)'
+                      ? '0 6px 16px color-mix(in srgb, var(--text-primary) 4%, transparent)'
                       : '0 1px 3px color-mix(in srgb, var(--bg-primary) 24%, transparent)'),
                 }}
               >
@@ -1429,7 +1484,8 @@ function HomeOverview({
                   <span
                     style={{
                       fontSize: '10px',
-                      fontWeight: 700,
+                      fontWeight: 800,
+                      letterSpacing: '0.02em',
                       color: isZeroMetric
                         ? 'color-mix(in srgb, var(--text-secondary) 82%, transparent)'
                         : 'var(--text-secondary)',
@@ -1437,20 +1493,6 @@ function HomeOverview({
                   >
                     {card.label}
                   </span>
-                  <span
-                    style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '999px',
-                      background: isZeroMetric
-                        ? `color-mix(in srgb, ${dotAccent} 58%, transparent)`
-                        : dotAccent,
-                      boxShadow: isZeroMetric
-                        ? `0 0 0 3px color-mix(in srgb, ${dotAccent} 8%, transparent)`
-                        : `0 0 0 4px color-mix(in srgb, ${dotAccent} 10%, transparent)`,
-                      flexShrink: 0,
-                    }}
-                  />
                 </div>
                 <div
                   style={{
@@ -1578,52 +1620,69 @@ function HomeOverview({
           count: `${categoryHighlights.length} 个分类`,
         })}
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(columns, Math.max(categoryHighlights.length, 1))}, minmax(0, 1fr))`, gap: '12px' }}>
-          {categoryHighlights.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              data-rh-overview-category-card={String(category.id)}
-              aria-label={category.name}
-              onMouseEnter={() => setHoveredCategoryId(category.id)}
-              onMouseLeave={() => setHoveredCategoryId(null)}
-              onClick={() => onSelectCategory(category.id)}
-              style={{
-                minHeight: '104px',
-                padding: '13px',
-                borderRadius: '16px',
-                ...surfaceStyle,
-                border: isLightTheme
-                  ? `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 34 : 18}%, var(--control-border))`
-                  : `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 40 : 24}%, var(--border))`,
-                background: isLightTheme
-                  ? `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 16 : 8}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint)) 100%)`
-                  : `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 22 : 12}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 100%)`,
-                display: 'grid',
-                gap: '8px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                transform: hoveredCategoryId === category.id ? interactiveCardLift : 'translateY(0)',
-                boxShadow: hoveredCategoryId === category.id
-                  ? (isLightTheme
-                    ? '0 14px 28px color-mix(in srgb, var(--text-primary) 8%, transparent)'
-                    : '0 16px 30px color-mix(in srgb, var(--bg-primary) 28%, transparent)')
-                  : surfaceStyle.boxShadow,
-                transition: interactiveCardTransition,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{category.name}</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: category.color || 'var(--brand-strong)' }}>{category.resourceCount || 0}</div>
-              </div>
-              <div style={{ fontSize: '12px', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
-                {category.previewNames.length > 0
-                  ? category.previewNames.join(' · ')
-                  : category.previewTags.length > 0
-                    ? category.previewTags.map((tag) => `#${tag}`).join(' ')
-                    : '点击进入该分类结果页'}
-              </div>
-            </button>
-          ))}
+          {categoryHighlights.map((category) => {
+            const categoryTone = category.tone || window.helpers.getCategoryTone(category, category.id);
+
+            return (
+              <button
+                key={category.id}
+                type="button"
+                data-rh-overview-category-card={String(category.id)}
+                aria-label={category.name}
+                onMouseEnter={() => setHoveredCategoryId(category.id)}
+                onMouseLeave={() => setHoveredCategoryId(null)}
+                onClick={() => onSelectCategory(category.id)}
+                style={{
+                  position: 'relative',
+                  minHeight: '104px',
+                  padding: '15px 13px 13px',
+                  borderRadius: '16px',
+                  ...surfaceStyle,
+                  border: isLightTheme
+                    ? `1px solid color-mix(in srgb, ${categoryTone.accent} ${hoveredCategoryId === category.id ? 24 : 14}%, var(--control-border))`
+                    : `1px solid color-mix(in srgb, ${categoryTone.accent} ${hoveredCategoryId === category.id ? 34 : 20}%, var(--border))`,
+                  background: hoveredCategoryId === category.id
+                    ? (isLightTheme
+                      ? `color-mix(in srgb, ${categoryTone.accent} 6%, var(--surface-elevated))`
+                      : `color-mix(in srgb, ${categoryTone.accent} 10%, var(--surface-elevated))`)
+                    : surfaceStyle.background,
+                  display: 'grid',
+                  gap: '8px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transform: hoveredCategoryId === category.id ? interactiveCardLift : 'translateY(0)',
+                  boxShadow: hoveredCategoryId === category.id
+                    ? (isLightTheme
+                      ? '0 14px 28px color-mix(in srgb, var(--text-primary) 8%, transparent)'
+                      : '0 16px 30px color-mix(in srgb, var(--bg-primary) 28%, transparent)')
+                    : surfaceStyle.boxShadow,
+                  transition: interactiveCardTransition,
+                  overflow: 'hidden',
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: '0 0 auto 0',
+                    height: '3px',
+                    background: categoryTone.accent,
+                  }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{category.name}</div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: categoryTone.accent }}>{category.resourceCount || 0}</div>
+                </div>
+                <div style={{ fontSize: '12px', lineHeight: 1.55, color: 'var(--text-secondary)' }}>
+                  {category.previewNames.length > 0
+                    ? category.previewNames.join(' · ')
+                    : category.previewTags.length > 0
+                      ? category.previewTags.map((tag) => `#${tag}`).join(' ')
+                      : '点击进入该分类结果页'}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -1680,14 +1739,14 @@ function HomeSidebarNav({
     : quietResults
       ? {
           border: isLightTheme
-            ? '1px solid color-mix(in srgb, var(--control-border) 18%, var(--surface-tint))'
-            : '1px solid color-mix(in srgb, var(--border-strong) 22%, var(--surface-tint))',
+            ? '1px solid var(--border)'
+            : '1px solid color-mix(in srgb, var(--border-strong) 72%, var(--border))',
           background: isLightTheme
-            ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 92%, var(--control-bg-muted)) 100%)'
-            : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 88%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 82%, var(--bg-primary)) 100%)',
+            ? 'var(--bg-tertiary)'
+            : 'color-mix(in srgb, var(--surface-elevated) 88%, var(--bg-primary))',
           boxShadow: isLightTheme
-            ? '0 8px 18px color-mix(in srgb, var(--text-primary) 3%, transparent), inset 0 1px 0 color-mix(in srgb, white 36%, transparent)'
-            : '0 12px 22px color-mix(in srgb, var(--bg-primary) 14%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 14%, transparent)',
+            ? '0 6px 16px color-mix(in srgb, var(--text-primary) 4%, transparent)'
+            : '0 12px 22px color-mix(in srgb, var(--bg-primary) 14%, transparent)',
         }
       : {
           border: isLightTheme
@@ -1703,7 +1762,7 @@ function HomeSidebarNav({
     fontWeight: 800,
     color: quietResults
       ? isLightTheme
-        ? 'color-mix(in srgb, var(--text-secondary) 82%, transparent)'
+        ? 'color-mix(in srgb, var(--text-secondary) 92%, transparent)'
         : 'color-mix(in srgb, var(--text-secondary) 94%, transparent)'
       : isLightTheme
         ? 'color-mix(in srgb, var(--text-secondary) 72%, transparent)'
@@ -1725,7 +1784,7 @@ function HomeSidebarNav({
     paddingTop: sidebarSectionPaddingTop,
     borderTop: quietResults
       ? isLightTheme
-        ? '1px solid color-mix(in srgb, var(--control-border) 16%, transparent)'
+        ? '1px solid color-mix(in srgb, var(--border) 86%, transparent)'
         : '1px solid color-mix(in srgb, var(--outline-strong) 12%, transparent)'
       : isLightTheme
         ? '1px solid color-mix(in srgb, var(--control-border) 18%, transparent)'
@@ -1736,17 +1795,17 @@ function HomeSidebarNav({
     padding: '0 8px',
     borderRadius: sidebarMenuRadius,
     border: active
-      ? '1px solid color-mix(in srgb, var(--brand) 26%, transparent)'
+      ? '1px solid color-mix(in srgb, var(--brand) 18%, var(--control-border))'
       : quietResults
         ? isLightTheme
-          ? '1px solid color-mix(in srgb, var(--control-border) 32%, var(--surface-tint))'
+          ? '1px solid color-mix(in srgb, var(--control-border) 84%, transparent)'
           : '1px solid color-mix(in srgb, var(--outline-strong) 30%, var(--surface-tint))'
         : '1px solid transparent',
     background: active
-      ? 'color-mix(in srgb, var(--brand-soft) 48%, var(--control-bg))'
+      ? 'color-mix(in srgb, var(--brand-soft) 88%, var(--surface-elevated))'
       : quietResults
         ? isLightTheme
-          ? 'color-mix(in srgb, var(--surface-elevated) 82%, var(--control-bg-muted))'
+          ? 'var(--surface-elevated)'
           : 'color-mix(in srgb, var(--surface-elevated) 42%, var(--control-bg))'
         : isLightTheme
           ? 'color-mix(in srgb, var(--control-bg) 42%, transparent)'
@@ -1755,7 +1814,7 @@ function HomeSidebarNav({
       ? 'var(--brand-strong)'
       : quietResults
         ? isLightTheme
-          ? 'color-mix(in srgb, var(--text-secondary) 90%, transparent)'
+          ? 'color-mix(in srgb, var(--text-primary) 76%, var(--text-secondary))'
           : 'color-mix(in srgb, var(--text-secondary) 88%, transparent)'
         : 'var(--text-primary)',
     cursor: 'pointer',
@@ -1767,34 +1826,32 @@ function HomeSidebarNav({
     fontWeight: active ? 700 : quietResults ? 600 : 500,
     textAlign: 'left',
     boxShadow: active
-      ? '0 4px 10px color-mix(in srgb, var(--brand) 8%, transparent)'
-      : quietResults
-        ? 'inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 42%, transparent)'
-        : 'none',
+      ? '0 4px 12px color-mix(in srgb, var(--brand) 10%, transparent)'
+      : 'none',
   });
   const categoryRowStyle = (active) => ({
     minHeight: sidebarMenuMinHeight,
     padding: quietResults ? '0 7px 0 0' : '0 8px 0 0',
     border: active
-      ? '1px solid color-mix(in srgb, var(--brand) 24%, transparent)'
+      ? '1px solid color-mix(in srgb, var(--brand) 18%, var(--control-border))'
       : quietResults
         ? isLightTheme
-          ? '1px solid color-mix(in srgb, var(--control-border) 32%, var(--surface-tint))'
+          ? '1px solid color-mix(in srgb, var(--control-border) 84%, transparent)'
           : '1px solid color-mix(in srgb, var(--outline-strong) 30%, var(--surface-tint))'
         : '1px solid transparent',
     borderRadius: sidebarMenuRadius,
     background: active
-      ? 'color-mix(in srgb, var(--brand-soft) 46%, var(--control-bg))'
+      ? 'color-mix(in srgb, var(--brand-soft) 88%, var(--surface-elevated))'
       : quietResults
         ? isLightTheme
-          ? 'color-mix(in srgb, var(--surface-elevated) 84%, var(--control-bg-muted))'
+          ? 'var(--surface-elevated)'
           : 'color-mix(in srgb, var(--surface-elevated) 40%, var(--control-bg))'
         : 'transparent',
     color: active
       ? 'var(--brand-strong)'
       : isLightTheme
         ? quietResults
-          ? 'color-mix(in srgb, var(--text-primary) 68%, transparent)'
+          ? 'color-mix(in srgb, var(--text-primary) 76%, var(--text-secondary))'
           : 'color-mix(in srgb, var(--text-primary) 82%, transparent)'
         : 'var(--text-secondary)',
     cursor: 'pointer',
@@ -1805,7 +1862,7 @@ function HomeSidebarNav({
     fontSize: '12px',
     fontWeight: active ? 700 : quietResults ? 600 : 500,
     textAlign: 'left',
-    boxShadow: quietResults && !active ? 'inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 38%, transparent)' : 'none',
+    boxShadow: 'none',
   });
   const tagChipStyle = (active) => ({
     display: 'inline-flex',
@@ -1814,17 +1871,17 @@ function HomeSidebarNav({
     padding: sidebarChipPadding,
     borderRadius: '999px',
     border: active
-      ? '1px solid color-mix(in srgb, var(--brand) 30%, transparent)'
+      ? '1px solid color-mix(in srgb, var(--brand) 18%, var(--control-border))'
       : quietResults
         ? isLightTheme
-          ? '1px solid color-mix(in srgb, var(--control-border) 32%, var(--surface-tint))'
+          ? '1px solid color-mix(in srgb, var(--control-border) 84%, transparent)'
           : '1px solid color-mix(in srgb, var(--outline-strong) 30%, var(--surface-tint))'
         : '1px solid transparent',
     background: active
-      ? 'color-mix(in srgb, var(--brand-soft) 52%, var(--control-bg))'
+      ? 'color-mix(in srgb, var(--brand-soft) 88%, var(--surface-elevated))'
       : quietResults
         ? isLightTheme
-          ? 'color-mix(in srgb, var(--surface-elevated) 82%, var(--control-bg-muted))'
+          ? 'var(--surface-muted)'
           : 'color-mix(in srgb, var(--surface-elevated) 40%, var(--control-bg))'
         : isLightTheme
           ? 'color-mix(in srgb, var(--control-bg) 34%, transparent)'
@@ -1907,14 +1964,14 @@ function HomeSidebarNav({
                       alignItems: 'center',
                       justifyContent: 'center',
                       background: active
-                        ? 'color-mix(in srgb, var(--brand) 16%, transparent)'
+                        ? 'color-mix(in srgb, var(--brand-soft) 92%, var(--surface-elevated))'
                         : quietResults
-                          ? 'transparent'
+                          ? 'var(--surface-muted)'
                           : isLightTheme
                             ? 'color-mix(in srgb, var(--surface-tint) 24%, var(--control-bg))'
                             : 'color-mix(in srgb, var(--surface-tint) 64%, transparent)',
                       color: active
-                        ? 'var(--brand)'
+                        ? 'var(--brand-strong)'
                         : quietResults
                           ? 'color-mix(in srgb, var(--text-secondary) 82%, transparent)'
                           : 'var(--text-secondary)',
@@ -1946,10 +2003,8 @@ function HomeSidebarNav({
                   minHeight: quietResults ? '22px' : '24px',
                   padding: quietResults ? '0 8px' : '0 9px',
                   borderRadius: '999px',
-                  border: isLightTheme
-                    ? '1px solid color-mix(in srgb, var(--control-border) 82%, transparent)'
-                    : '1px solid color-mix(in srgb, var(--border-strong) 72%, var(--border))',
-                  background: isLightTheme ? 'color-mix(in srgb, var(--control-bg) 72%, transparent)' : 'var(--surface-muted)',
+                  border: '1px solid var(--control-border)',
+                  background: isLightTheme ? 'var(--surface-elevated)' : 'var(--surface-muted)',
                   color: 'var(--text-secondary)',
                   cursor: 'pointer',
                   fontSize: quietResults ? '9px' : '10px',
@@ -1987,9 +2042,7 @@ function HomeSidebarNav({
                 minHeight: quietResults ? '22px' : '24px',
                 padding: quietResults ? '0 7px' : '0 8px',
                 borderRadius: '999px',
-                border: isLightTheme
-                  ? '1px solid color-mix(in srgb, var(--control-border) 82%, transparent)'
-                  : '1px solid color-mix(in srgb, var(--border-strong) 72%, var(--border))',
+                border: '1px solid var(--control-border)',
                 background: 'transparent',
                 color: 'var(--text-primary)',
                 cursor: 'pointer',

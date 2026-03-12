@@ -18,34 +18,37 @@ function AdminLayout({ children, activeTab }) {
   ];
 
   const sectionTitleStyle = {
-    fontSize: '11px',
-    fontWeight: 600,
+    fontSize: '10px',
+    fontWeight: 800,
     textTransform: 'uppercase',
     color: 'var(--text-secondary)',
-    letterSpacing: '0.05em',
-    padding: isStacked ? '0 8px 8px' : '8px 4px 8px',
+    letterSpacing: '0.08em',
+    padding: isStacked ? '0 8px 8px' : '8px 8px 10px',
   };
 
   const navButtonStyle = (isSelected) => ({
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    minHeight: '36px',
-    width: isStacked ? '100%' : 'calc(100% - 16px)',
-    borderRadius: '8px',
-    padding: '8px 12px',
-    margin: isStacked ? 0 : '2px 8px',
-    border: 'none',
+    gap: '10px',
+    minHeight: '42px',
+    width: '100%',
+    borderRadius: '12px',
+    padding: '0 12px 0 10px',
+    margin: 0,
+    border: isSelected
+      ? '1px solid color-mix(in srgb, var(--brand) 18%, var(--control-border))'
+      : '1px solid transparent',
     cursor: 'pointer',
     textAlign: 'left',
     fontSize: '14px',
-    background: isSelected ? 'color-mix(in srgb, var(--brand) 10%, transparent)' : 'none',
-    color: isSelected ? 'var(--brand)' : 'var(--text-primary)',
-    fontWeight: isSelected ? 600 : 400,
-    transition: 'background 150ms',
+    background: isSelected ? 'color-mix(in srgb, var(--brand-soft) 88%, var(--surface-elevated))' : 'transparent',
+    color: isSelected ? 'var(--brand-strong)' : 'var(--text-primary)',
+    fontWeight: isSelected ? 700 : 600,
+    boxShadow: isSelected ? '0 4px 12px color-mix(in srgb, var(--brand) 10%, transparent)' : 'none',
+    transition: 'background 150ms, border-color 150ms, color 150ms, box-shadow 150ms',
   });
 
-  const pageBackground = 'linear-gradient(180deg, color-mix(in srgb, var(--surface-tint) 34%, var(--bg-primary)) 0%, var(--bg-primary) 260px), var(--bg-primary)';
+  const pageBackground = 'var(--bg-primary)';
   return (
     <div style={{ minHeight: '100vh', background: pageBackground }}>
       <window.Header showSearch={false} />
@@ -53,7 +56,7 @@ function AdminLayout({ children, activeTab }) {
         <div style={{
           width: isStacked ? '100%' : '200px',
           flexShrink: 0,
-          background: 'transparent',
+          background: 'var(--bg-tertiary)',
           borderRight: isStacked ? 'none' : '1px solid var(--border)',
           borderBottom: isStacked ? '1px solid var(--border)' : 'none',
           position: isStacked ? 'static' : 'sticky',
@@ -68,19 +71,29 @@ function AdminLayout({ children, activeTab }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: 'none',
-                border: 'none',
+                background: 'transparent',
+                border: '1px solid transparent',
                 cursor: 'pointer',
                 color: 'var(--text-secondary)',
                 fontSize: '13px',
-                padding: '8px 10px',
-                borderRadius: '6px',
+                fontWeight: 600,
+                padding: '10px 12px',
+                borderRadius: '10px',
                 marginBottom: '8px',
                 width: '100%',
                 textAlign: 'left',
+                transition: 'background 150ms, border-color 150ms, color 150ms',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-tertiary)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--surface-elevated)';
+                e.currentTarget.style.borderColor = 'var(--control-border)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }}
             >
               <ArrowLeft size={14} />
               返回首页
@@ -92,7 +105,7 @@ function AdminLayout({ children, activeTab }) {
             display: isStacked ? 'grid' : 'block',
             gridTemplateColumns: isStacked ? 'repeat(auto-fit, minmax(160px, 1fr))' : 'none',
             gap: isStacked ? '6px' : 0,
-            padding: isStacked ? '0 8px 12px' : 0,
+            padding: isStacked ? '0 8px 12px' : '0 8px 12px',
           }}>
             {navItems.map(({ key, label, Icon }) => {
               const isSelected = activeTab === key;
@@ -101,11 +114,32 @@ function AdminLayout({ children, activeTab }) {
                   key={key}
                   onClick={() => navigate('#/admin/' + key)}
                   style={navButtonStyle(isSelected)}
-                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-tertiary)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = isSelected ? 'color-mix(in srgb, var(--brand) 10%, transparent)' : 'none'; }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.background = 'var(--surface-hover)';
+                      e.currentTarget.style.borderColor = 'var(--control-border)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = isSelected ? 'color-mix(in srgb, var(--brand-soft) 88%, var(--surface-elevated))' : 'transparent';
+                    e.currentTarget.style.borderColor = isSelected ? 'color-mix(in srgb, var(--brand) 18%, var(--control-border))' : 'transparent';
+                  }}
                 >
-                  <Icon size={15} style={{ color: isSelected ? 'var(--brand)' : 'var(--text-secondary)' }} />
-                  {label}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                    <span
+                      style={{
+                        width: '2px',
+                        height: '16px',
+                        borderRadius: '999px',
+                        background: isSelected ? 'var(--brand)' : 'transparent',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Icon size={15} style={{ color: isSelected ? 'var(--brand-strong)' : 'var(--text-secondary)' }} />
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {label}
+                    </span>
+                  </span>
                 </button>
               );
             })}

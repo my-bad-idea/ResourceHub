@@ -85,15 +85,66 @@ function AdminEmail() {
 
   const inputStyle = (field) => ({
     width: '100%', padding: '9px 12px', boxSizing: 'border-box',
-    border: `1px solid ${errors[field] ? 'var(--danger)' : 'var(--border)'}`,
-    borderRadius: '8px',
-    background: 'var(--bg-secondary)',
-    backgroundColor: 'var(--bg-secondary)',
+    border: `1px solid ${errors[field] ? 'var(--danger)' : 'var(--control-border)'}`,
+    borderRadius: '10px',
+    background: 'var(--surface-elevated)',
+    backgroundColor: 'var(--surface-elevated)',
     color: 'var(--text-primary)',
     fontSize: '14px', outline: 'none',
   });
-  const labelStyle = { fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' };
+  const labelStyle = { fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' };
   const fieldStyle = { marginBottom: '20px' };
+  const headerPanelStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '18px',
+    gap: '12px',
+    flexWrap: 'wrap',
+    padding: '18px 20px',
+    background: 'var(--surface-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '18px',
+    boxShadow: 'var(--shadow-card)',
+  };
+  const secondaryButtonStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    minHeight: '38px',
+    padding: '0 16px',
+    border: '1px solid var(--control-border)',
+    background: 'var(--surface-elevated)',
+    color: 'var(--text-primary)',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 600,
+    boxShadow: 'var(--shadow-control)',
+  };
+  const primaryButtonStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    minHeight: '38px',
+    padding: '0 18px',
+    background: 'var(--brand)',
+    color: '#fff',
+    border: '1px solid var(--brand)',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 700,
+    boxShadow: '0 10px 20px color-mix(in srgb, var(--brand) 16%, transparent)',
+  };
+  const panelStyle = {
+    background: 'var(--surface-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '18px',
+    padding: '24px',
+    maxWidth: '720px',
+    boxShadow: 'var(--shadow-card)',
+  };
 
   if (loading) {
     return (
@@ -106,24 +157,17 @@ function AdminEmail() {
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '12px', flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>邮件服务</h2>
+      <div style={headerPanelStyle}>
+        <div style={{ display: 'grid', gap: '4px' }}>
+          <h2 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.03em' }}>邮件服务</h2>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>管理 SMTP 连接与发件人信息，保持后台配置区的层级和交互一致。</div>
+        </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button type="button" onClick={handleTest} disabled={testing || saving} style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '8px 16px', border: '1px solid var(--border)', background: 'var(--bg-secondary)',
-            color: 'var(--text-primary)', borderRadius: '8px', cursor: (testing || saving) ? 'not-allowed' : 'pointer',
-            fontSize: '14px', opacity: (testing || saving) ? 0.7 : 1,
-          }}>
+          <button type="button" onClick={handleTest} disabled={testing || saving} style={{ ...secondaryButtonStyle, opacity: (testing || saving) ? 0.7 : 1, cursor: (testing || saving) ? 'not-allowed' : 'pointer' }}>
             {testing ? <Loader size={15} /> : <Send size={15} />}
             测试连接
           </button>
-          <button type="submit" disabled={saving} style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '8px 20px', background: 'var(--brand)', color: '#fff',
-            border: 'none', borderRadius: '8px', cursor: saving ? 'not-allowed' : 'pointer',
-            fontSize: '14px', opacity: saving ? 0.8 : 1,
-          }}>
+          <button type="submit" disabled={saving} style={{ ...primaryButtonStyle, opacity: saving ? 0.8 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>
             {saving ? <Loader size={15} /> : <Save size={15} />}
             保存配置
           </button>
@@ -132,15 +176,20 @@ function AdminEmail() {
 
       {!form.smtpHost && (
         <div style={{
-          background: 'color-mix(in srgb, var(--brand) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--brand) 20%, transparent)',
-          borderRadius: '10px', padding: '12px 16px', marginBottom: '20px',
-          fontSize: '13px', color: 'var(--text-secondary)',
+          background: 'color-mix(in srgb, var(--brand-soft) 78%, var(--surface-elevated))',
+          border: '1px solid color-mix(in srgb, var(--brand) 16%, var(--control-border))',
+          borderRadius: '14px',
+          padding: '12px 16px',
+          marginBottom: '18px',
+          fontSize: '13px',
+          color: 'var(--text-secondary)',
+          boxShadow: 'var(--shadow-control)',
         }}>
           SMTP 主机为空时，系统使用模拟邮件模式：邮件不会真实发送，仅在前端弹窗预览。
         </div>
       )}
 
-      <div style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', maxWidth: '720px' }}>
+      <div style={panelStyle}>
         <div style={fieldStyle}>
           <label style={labelStyle}>SMTP 主机</label>
           <input className="rh-admin-input" value={form.smtpHost} onChange={e => setForm(f => ({ ...f, smtpHost: e.target.value }))}
@@ -199,7 +248,7 @@ function AdminEmail() {
             </button>
           </div>
           {errors.smtpPassword && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.smtpPassword}</div>}
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>填写 `***` 表示不修改当前已保存的密码</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>填写 `***` 表示不修改当前已保存的密码</div>
         </div>
 
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px', marginTop: '4px' }}>

@@ -38,6 +38,7 @@ const initialState = {
   quickAccessFilter: initialUiPreferences.quickAccessFilter,
   viewMode: initialUiPreferences.viewMode,
   sortBy: initialUiPreferences.sortBy,
+  homeMode: 'overview',
   toasts: [],
   activeModal: null,
   emailPreview: null,
@@ -57,6 +58,7 @@ function appReducer(state, action) {
         viewMode: authenticatedPreferences.viewMode,
         sortBy: authenticatedPreferences.sortBy,
         quickAccessFilter: null,
+        homeMode: 'overview',
       };
     }
 
@@ -75,6 +77,7 @@ function appReducer(state, action) {
         viewMode: guestPreferences.viewMode,
         sortBy: guestPreferences.sortBy,
         quickAccessFilter: guestPreferences.quickAccessFilter,
+        homeMode: 'overview',
       };
     }
 
@@ -224,6 +227,9 @@ function appReducer(state, action) {
       persistUiPreferencesForState(nextSortState);
       return nextSortState;
     }
+
+    case 'SET_HOME_MODE':
+      return { ...state, homeMode: action.mode };
 
     case 'HYDRATE_UI_PREFERENCES': {
       const basePreferences = {

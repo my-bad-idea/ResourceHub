@@ -132,25 +132,100 @@ function AdminUsers() {
   const totalPages = Math.ceil(users.length / PAGE_SIZE);
   const pageData = users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const thStyle = { padding: '0 16px', textAlign: 'left', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' };
-  const tdStyle = { padding: '0 16px', fontSize: '14px', color: 'var(--text-primary)' };
+  const headerPanelStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap',
+    marginBottom: '18px',
+    padding: '18px 20px',
+    background: 'var(--surface-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '18px',
+    boxShadow: 'var(--shadow-card)',
+  };
+  const primaryButtonStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    minHeight: '38px',
+    padding: '0 16px',
+    background: 'var(--brand)',
+    color: '#fff',
+    border: '1px solid var(--brand)',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 700,
+    boxShadow: '0 10px 20px color-mix(in srgb, var(--brand) 16%, transparent)',
+  };
+  const secondaryButtonStyle = {
+    minHeight: '38px',
+    padding: '0 16px',
+    border: '1px solid var(--control-border)',
+    background: 'var(--surface-elevated)',
+    color: 'var(--text-primary)',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 600,
+    boxShadow: 'var(--shadow-control)',
+  };
+  const tableShellStyle = {
+    background: 'var(--surface-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '18px',
+    overflowX: 'auto',
+    boxShadow: 'var(--shadow-card)',
+  };
+  const thStyle = { padding: '0 18px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.02em' };
+  const tdStyle = { padding: '0 18px', fontSize: '14px', color: 'var(--text-primary)' };
+  const iconButtonStyle = (tone = 'neutral') => ({
+    width: '32px',
+    height: '32px',
+    borderRadius: '10px',
+    border: `1px solid ${tone === 'danger' ? 'color-mix(in srgb, var(--danger) 20%, var(--control-border))' : 'var(--control-border)'}`,
+    background: tone === 'danger'
+      ? 'color-mix(in srgb, var(--danger) 8%, var(--surface-elevated))'
+      : 'var(--surface-elevated)',
+    color: tone === 'danger' ? 'var(--danger)' : 'var(--text-secondary)',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: 'var(--shadow-control)',
+  });
+  const pagerButtonStyle = (disabled) => ({
+    width: '36px',
+    height: '36px',
+    border: '1px solid var(--control-border)',
+    background: 'var(--surface-elevated)',
+    borderRadius: '10px',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    color: disabled ? 'var(--text-tertiary)' : 'var(--text-primary)',
+    boxShadow: 'var(--shadow-control)',
+    opacity: disabled ? 0.6 : 1,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  });
   const inputStyle = (field) => ({
-    width: '100%', padding: '8px 12px', boxSizing: 'border-box',
-    border: `1px solid ${formErrors[field] ? 'var(--danger)' : 'var(--border)'}`,
-    borderRadius: '8px', background: 'var(--bg-secondary)', color: 'var(--text-primary)',
+    width: '100%', padding: '10px 12px', boxSizing: 'border-box',
+    border: `1px solid ${formErrors[field] ? 'var(--danger)' : 'var(--control-border)'}`,
+    borderRadius: '10px', background: 'var(--surface-elevated)', color: 'var(--text-primary)',
     fontSize: '14px', outline: 'none',
   });
-  const labelStyle = { fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' };
+  const labelStyle = { fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' };
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>用户管理</h2>
-        <button onClick={openCreate} style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '8px 16px', background: 'var(--brand)', color: '#fff',
-          border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px',
-        }}>
+      <div style={headerPanelStyle}>
+        <div style={{ display: 'grid', gap: '4px' }}>
+          <h2 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.03em' }}>用户管理</h2>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>管理账号、角色与状态，确保后台操作语义清晰而克制。</div>
+        </div>
+        <button onClick={openCreate} style={primaryButtonStyle}>
           <Plus size={15} /> 新增用户
         </button>
       </div>
@@ -158,10 +233,10 @@ function AdminUsers() {
       {loadingUsers ? (
         <window.Skeleton rows={5} type="row" />
       ) : (
-        <div style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '12px', overflowX: 'auto', boxShadow: '0 1px 4px rgba(18,32,57,0.08)' }}>
+        <div style={tableShellStyle}>
           <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: 'var(--surface-muted)', height: '44px' }}>
+              <tr style={{ background: 'var(--surface-muted)', height: '46px' }}>
                 <th style={thStyle}>显示名称</th>
                 <th style={thStyle}>用户名</th>
                 <th style={thStyle}>邮箱</th>
@@ -172,38 +247,64 @@ function AdminUsers() {
             </thead>
             <tbody>
               {pageData.length === 0 ? (
-                <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', height: '80px', color: 'var(--text-secondary)' }}>暂无用户</td></tr>
+                <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', height: '88px', color: 'var(--text-secondary)' }}>暂无用户</td></tr>
               ) : pageData.map(user => (
-                <tr key={user.id} style={{ height: '52px', borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)', transition: 'background 150ms ease' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in srgb, var(--brand) 10%, var(--bg-secondary))'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; }}>
-                  <td style={tdStyle}>{user.displayName}</td>
+                <tr
+                  key={user.id}
+                  style={{ height: '56px', borderTop: '1px solid color-mix(in srgb, var(--border) 86%, transparent)', background: 'var(--surface-elevated)', transition: 'background 150ms ease' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-hover)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface-elevated)'; }}
+                >
+                  <td style={{ ...tdStyle, fontWeight: 600 }}>{user.displayName}</td>
                   <td style={{ ...tdStyle, color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: '13px' }}>{user.username}</td>
-                  <td style={{ ...tdStyle, color: 'var(--text-secondary)', fontSize: '13px' }}>{user.email}</td>
+                  <td style={{ ...tdStyle, color: 'var(--text-tertiary)', fontSize: '13px' }}>{user.email}</td>
                   <td style={tdStyle}>
                     <span style={{
-                      fontSize: '12px', padding: '2px 8px', borderRadius: '4px',
-                      background: user.role === 'admin' ? 'color-mix(in srgb, var(--brand) 10%, transparent)' : 'var(--bg-tertiary)',
-                      color: user.role === 'admin' ? 'var(--brand)' : 'var(--text-secondary)',
-                      fontWeight: user.role === 'admin' ? 600 : 400,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      minHeight: '28px',
+                      padding: '0 10px',
+                      borderRadius: '999px',
+                      border: user.role === 'admin'
+                        ? '1px solid color-mix(in srgb, var(--brand) 18%, var(--control-border))'
+                        : '1px solid color-mix(in srgb, var(--control-border) 72%, transparent)',
+                      background: user.role === 'admin' ? 'var(--brand-soft)' : 'var(--surface-muted)',
+                      color: user.role === 'admin' ? 'var(--brand-strong)' : 'var(--text-secondary)',
+                      fontSize: '12px',
+                      fontWeight: user.role === 'admin' ? 700 : 600,
                     }}>
                       {user.role === 'admin' ? '管理员' : '普通用户'}
                     </span>
                   </td>
                   <td style={tdStyle}>
-                    <span style={{ fontSize: '12px', color: user.status === 'active' ? 'var(--success)' : 'var(--danger)' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      minHeight: '28px',
+                      padding: '0 10px',
+                      borderRadius: '999px',
+                      border: user.status === 'active'
+                        ? '1px solid color-mix(in srgb, var(--success) 20%, var(--control-border))'
+                        : '1px solid color-mix(in srgb, var(--danger) 20%, var(--control-border))',
+                      background: user.status === 'active'
+                        ? 'color-mix(in srgb, var(--success) 10%, var(--surface-elevated))'
+                        : 'color-mix(in srgb, var(--danger) 8%, var(--surface-elevated))',
+                      color: user.status === 'active' ? 'var(--success)' : 'var(--danger)',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                    }}>
                       {user.status === 'active' ? '启用' : '禁用'}
                     </span>
                   </td>
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', gap: '4px' }}>
-                      <button onClick={() => openEdit(user)} title="编辑" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => openEdit(user)} title="编辑" style={iconButtonStyle('neutral')}>
                         <Edit2 size={14} />
                       </button>
-                      <button onClick={() => { setResetTarget(user); setResetError(''); }} title="重置密码" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => { setResetTarget(user); setResetError(''); }} title="重置密码" style={iconButtonStyle('neutral')}>
                         <Key size={14} />
                       </button>
-                      <button onClick={() => setDeleteTarget(user)} title="删除" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--danger)', display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => setDeleteTarget(user)} title="删除" style={iconButtonStyle('danger')}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -218,12 +319,12 @@ function AdminUsers() {
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-            style={{ padding: '6px 12px', border: '1px solid var(--border)', background: 'var(--bg-primary)', borderRadius: '6px', cursor: 'pointer', color: 'var(--text-primary)' }}>
+            style={pagerButtonStyle(page === 1)}>
             <lucide.ChevronLeft size={14} />
           </button>
-          <span style={{ padding: '6px 12px', fontSize: '14px', color: 'var(--text-secondary)' }}>{page} / {totalPages}</span>
+          <span style={{ padding: '6px 12px', fontSize: '14px', color: 'var(--text-secondary)', minWidth: '72px', textAlign: 'center' }}>{page} / {totalPages}</span>
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-            style={{ padding: '6px 12px', border: '1px solid var(--border)', background: 'var(--bg-primary)', borderRadius: '6px', cursor: 'pointer', color: 'var(--text-primary)' }}>
+            style={pagerButtonStyle(page === totalPages)}>
             <lucide.ChevronRight size={14} />
           </button>
         </div>
@@ -233,7 +334,7 @@ function AdminUsers() {
       <window.Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editTarget ? '编辑用户' : '新增用户'} width="480px">
         <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
           {formErrors.general && (
-            <div style={{ background: 'rgba(255,59,48,0.08)', border: '1px solid var(--danger)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: 'var(--danger)' }}>
+            <div style={{ background: 'color-mix(in srgb, var(--danger) 8%, var(--surface-elevated))', border: '1px solid color-mix(in srgb, var(--danger) 22%, var(--control-border))', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: 'var(--danger)' }}>
               {formErrors.general}
             </div>
           )}
@@ -262,7 +363,7 @@ function AdminUsers() {
             <input value={form.email} disabled={saving} type="email" name="email"
               autoComplete="email"
               onChange={e => { setForm(f => ({ ...f, email: e.target.value })); setFormErrors(p => ({ ...p, email: null })); }}
-              style={inputStyle('email')} placeholder="user@example.com" />
+                style={inputStyle('email')} placeholder="user@example.com" />
             {formErrors.email && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{formErrors.email}</div>}
           </div>
           {!editTarget && (
@@ -295,7 +396,7 @@ function AdminUsers() {
                 onClick={() => setForm(f => ({ ...f, enabled: !f.enabled }))}
                 style={{
                   width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                  background: form.enabled ? 'var(--success)' : 'var(--bg-tertiary)',
+                  background: form.enabled ? 'var(--brand)' : 'var(--bg-tertiary)',
                   position: 'relative', transition: 'background 200ms',
                 }}>
                 <div style={{
@@ -309,15 +410,8 @@ function AdminUsers() {
             </div>
           )}
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-            <button type="button" onClick={() => setShowModal(false)} disabled={saving} style={{
-              padding: '8px 20px', border: '1px solid var(--border)', background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)', borderRadius: '8px', cursor: 'pointer', fontSize: '14px',
-            }}>取消</button>
-            <button type="submit" disabled={saving} style={{
-              padding: '8px 20px', background: 'var(--brand)', color: '#fff', border: 'none',
-              borderRadius: '8px', cursor: saving ? 'not-allowed' : 'pointer', fontSize: '14px',
-              opacity: saving ? 0.8 : 1, display: 'flex', alignItems: 'center', gap: '6px',
-            }}>
+            <button type="button" onClick={() => setShowModal(false)} disabled={saving} style={secondaryButtonStyle}>取消</button>
+            <button type="submit" disabled={saving} style={{ ...primaryButtonStyle, opacity: saving ? 0.8 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>
               {saving && <Loader size={14} />} 保存
             </button>
           </div>
@@ -331,17 +425,10 @@ function AdminUsers() {
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
             系统将自动生成临时密码并发送至用户邮箱，用户可凭临时密码登录后自行修改。
           </p>
-          {resetError && <div style={{ background: 'rgba(255,59,48,0.08)', border: '1px solid var(--danger)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: 'var(--danger)' }}>{resetError}</div>}
+          {resetError && <div style={{ background: 'color-mix(in srgb, var(--danger) 8%, var(--surface-elevated))', border: '1px solid color-mix(in srgb, var(--danger) 22%, var(--control-border))', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: 'var(--danger)' }}>{resetError}</div>}
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-            <button onClick={() => { setResetTarget(null); setResetError(''); }} disabled={resetLoading} style={{
-              padding: '8px 20px', border: '1px solid var(--border)', background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)', borderRadius: '8px', cursor: 'pointer', fontSize: '14px',
-            }}>取消</button>
-            <button onClick={handleResetPassword} disabled={resetLoading} style={{
-              padding: '8px 20px', background: 'var(--brand)', color: '#fff', border: 'none',
-              borderRadius: '8px', cursor: resetLoading ? 'not-allowed' : 'pointer', fontSize: '14px',
-              opacity: resetLoading ? 0.8 : 1, display: 'flex', alignItems: 'center', gap: '6px',
-            }}>
+            <button onClick={() => { setResetTarget(null); setResetError(''); }} disabled={resetLoading} style={secondaryButtonStyle}>取消</button>
+            <button onClick={handleResetPassword} disabled={resetLoading} style={{ ...primaryButtonStyle, opacity: resetLoading ? 0.8 : 1, cursor: resetLoading ? 'not-allowed' : 'pointer' }}>
               {resetLoading && <Loader size={14} />} 确认重置
             </button>
           </div>
@@ -363,4 +450,3 @@ function AdminUsers() {
 }
 
 window.AdminUsers = AdminUsers;
-

@@ -28,64 +28,70 @@
       margin: 0;
       font-family: 'Inter', 'DM Sans', -apple-system, 'Noto Sans SC', sans-serif;
       background:
-        linear-gradient(180deg, color-mix(in srgb, var(--surface-tint) 34%, var(--bg-primary)) 0%, var(--bg-primary) 260px),
+        linear-gradient(180deg, color-mix(in srgb, var(--surface-tint) 18%, var(--bg-primary)) 0%, var(--bg-primary) 240px),
         var(--bg-primary);
       color: var(--text-primary);
       min-height: 100vh;
     }
 
     :root {
-      --bg-primary:    #F3F7FD;
+      --bg-primary:    #F6F8FB;
       --bg-secondary:  #FFFFFF;
-      --bg-tertiary:   #E5ECF7;
+      --bg-tertiary:   #FBFCFE;
       --surface-elevated: #FFFFFF;
-      --surface-muted: #F7FAFF;
-      --surface-tint:  #DCE9FF;
-      --text-primary:  #162136;
-      --text-secondary:#627089;
-      --brand:         #1769FF;
-      --brand-soft:    #DCE9FF;
-      --brand-strong:  #1259D6;
-      --border:        #D7DFEC;
-      --border-strong: #B7C7DF;
-      --outline-strong:#A6B9D6;
-      --control-bg:    #F8FBFF;
-      --control-bg-muted:#EFF5FD;
-      --control-border:#C4D3E6;
-      --control-border-strong:#9FB7D7;
-      --shadow-control: 0 3px 9px rgba(18,32,57,0.06), 0 1px 3px rgba(18,32,57,0.03);
-      --shadow-control-hover: 0 8px 18px rgba(18,32,57,0.08), 0 2px 6px rgba(18,32,57,0.04);
-      --danger:        #FF3B30;
-      --success:       #34C759;
-      --shadow-card:   0 14px 32px rgba(18,32,57,0.08), 0 2px 8px rgba(18,32,57,0.05);
-      --shadow-modal:  0 28px 72px rgba(18,32,57,0.18);
-      --shadow-dropdown: 0 18px 40px rgba(18,32,57,0.16), 0 6px 16px rgba(18,32,57,0.08);
+      --surface-muted: #F7F9FC;
+      --surface-tint:  #EAF1FF;
+      --surface-hover: #F4F7FB;
+      --text-primary:  #132238;
+      --text-secondary:#5F6C80;
+      --text-tertiary: #74839A;
+      --brand:         #2563EB;
+      --brand-soft:    #EAF1FF;
+      --brand-strong:  #1D4ED8;
+      --border:        #D7E1EC;
+      --border-strong: #C7D3E0;
+      --outline-strong:#B8C7D8;
+      --control-bg:    #FFFFFF;
+      --control-bg-muted:#F4F7FB;
+      --control-border:#D7E1EC;
+      --control-border-strong:#C7D3E0;
+      --shadow-control: 0 2px 8px rgba(19,34,56,0.04);
+      --shadow-control-hover: 0 8px 20px rgba(19,34,56,0.08);
+      --danger:        #E5484D;
+      --success:       #16A34A;
+      --shadow-card:   0 6px 16px rgba(19,34,56,0.05);
+      --shadow-card-hover: 0 12px 24px rgba(19,34,56,0.08);
+      --shadow-modal:  0 28px 72px rgba(19,34,56,0.18);
+      --shadow-dropdown: 0 12px 28px rgba(19,34,56,0.10);
     }
 
     .dark {
-      --bg-primary:    #0D1117;
-      --bg-secondary:  #161B22;
-      --bg-tertiary:   #21262D;
-      --surface-elevated: #161B22;
-      --surface-muted: #1B2430;
-      --surface-tint:  #132846;
+      --bg-primary:    #0D141D;
+      --bg-secondary:  #131C26;
+      --bg-tertiary:   #1C2734;
+      --surface-elevated: #131C26;
+      --surface-muted: #1A2633;
+      --surface-tint:  #132A4D;
+      --surface-hover: #1A2431;
       --text-primary:  #E6EDF3;
-      --text-secondary:#8B949E;
-      --brand:         #2F81F7;
-      --brand-soft:    #16345D;
-      --brand-strong:  #6EA8FF;
-      --border:        #30363D;
-      --border-strong: #5D6978;
-      --outline-strong:#748396;
-      --control-bg:    #1A2330;
-      --control-bg-muted:#202B38;
-      --control-border:#5F738D;
-      --control-border-strong:#7E95B3;
+      --text-secondary:#96A3B4;
+      --text-tertiary: #7E8C9F;
+      --brand:         #4A86FF;
+      --brand-soft:    #193762;
+      --brand-strong:  #8CB4FF;
+      --border:        #2C3643;
+      --border-strong: #566677;
+      --outline-strong:#6C7F95;
+      --control-bg:    #1A2431;
+      --control-bg-muted:#212D3A;
+      --control-border:#5D748D;
+      --control-border-strong:#7F96B3;
       --shadow-control: 0 2px 6px rgba(0,0,0,0.24);
       --shadow-control-hover: 0 4px 12px rgba(0,0,0,0.34);
-      --danger:        #F85149;
-      --success:       #3FB950;
-      --shadow-card:   0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+      --danger:        #FF667A;
+      --success:       #49C46E;
+      --shadow-card:   0 1px 3px rgba(0,0,0,0.32), 0 1px 2px rgba(0,0,0,0.22);
+      --shadow-card-hover: 0 18px 32px rgba(0,0,0,0.36);
       --shadow-modal:  0 20px 60px rgba(0,0,0,0.5);
       --shadow-dropdown: 0 4px 16px rgba(0,0,0,0.4);
     }
@@ -128,7 +134,7 @@
     }
 
     input::placeholder, textarea::placeholder {
-      color: color-mix(in srgb, var(--text-secondary) 84%, transparent);
+      color: color-mix(in srgb, var(--text-tertiary) 92%, transparent);
       opacity: 1;
     }
 

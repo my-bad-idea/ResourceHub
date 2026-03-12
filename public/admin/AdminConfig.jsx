@@ -81,15 +81,51 @@ function AdminConfig() {
 
   const inputStyle = (field) => ({
     width: '100%', padding: '9px 12px', boxSizing: 'border-box',
-    border: `1px solid ${errors[field] ? 'var(--danger)' : 'var(--border)'}`,
-    borderRadius: '8px',
-    background: 'var(--bg-secondary)',
-    backgroundColor: 'var(--bg-secondary)',
+    border: `1px solid ${errors[field] ? 'var(--danger)' : 'var(--control-border)'}`,
+    borderRadius: '10px',
+    background: 'var(--surface-elevated)',
+    backgroundColor: 'var(--surface-elevated)',
     color: 'var(--text-primary)',
     fontSize: '14px', outline: 'none',
   });
-  const labelStyle = { fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' };
+  const labelStyle = { fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' };
   const fieldStyle = { marginBottom: '20px' };
+  const headerPanelStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap',
+    marginBottom: '18px',
+    padding: '18px 20px',
+    background: 'var(--surface-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '18px',
+    boxShadow: 'var(--shadow-card)',
+  };
+  const primaryButtonStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    minHeight: '38px',
+    padding: '0 18px',
+    background: 'var(--brand)',
+    color: '#fff',
+    border: '1px solid var(--brand)',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 700,
+    boxShadow: '0 10px 20px color-mix(in srgb, var(--brand) 16%, transparent)',
+  };
+  const panelStyle = {
+    background: 'var(--surface-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '18px',
+    padding: '24px',
+    maxWidth: '680px',
+    boxShadow: 'var(--shadow-card)',
+  };
 
   if (loading) {
     return (
@@ -102,20 +138,18 @@ function AdminConfig() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>系统配置</h2>
-        <button onClick={handleSave} disabled={saving} style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '8px 20px', background: 'var(--brand)', color: '#fff',
-          border: 'none', borderRadius: '8px', cursor: saving ? 'not-allowed' : 'pointer',
-          fontSize: '14px', opacity: saving ? 0.8 : 1,
-        }}>
+      <div style={headerPanelStyle}>
+        <div style={{ display: 'grid', gap: '4px' }}>
+          <h2 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.03em' }}>系统配置</h2>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>维护站点基础信息、注册策略与安全有效期配置。</div>
+        </div>
+        <button onClick={handleSave} disabled={saving} style={{ ...primaryButtonStyle, opacity: saving ? 0.8 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>
           {saving ? <Loader size={15} /> : <Save size={15} />}
           保存配置
         </button>
       </div>
 
-      <div style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', maxWidth: '640px' }}>
+      <div style={panelStyle}>
         <div style={fieldStyle}>
           <label style={labelStyle}>站点标题</label>
           <input value={form.siteTitle} onChange={e => setForm(f => ({ ...f, siteTitle: e.target.value }))}
@@ -135,7 +169,7 @@ function AdminConfig() {
           <input value={form.logoUrl} onChange={e => setForm(f => ({ ...f, logoUrl: e.target.value }))}
             className="rh-admin-input" style={inputStyle('logoUrl')} placeholder="留空则使用默认图标" disabled={saving} />
           {errors.logoUrl && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.logoUrl}</div>}
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>留空时显示品牌色首字母图标</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>留空时显示品牌色首字母图标</div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', ...fieldStyle }}>
@@ -163,7 +197,7 @@ function AdminConfig() {
             style={{
               width: '44px', height: '24px', borderRadius: '12px', border: 'none',
               cursor: saving ? 'not-allowed' : 'pointer',
-              background: form.enableRegister ? 'var(--success)' : 'var(--bg-tertiary)',
+              background: form.enableRegister ? 'var(--brand)' : 'var(--bg-tertiary)',
               position: 'relative', transition: 'background 200ms', flexShrink: 0,
             }}>
             <div style={{
@@ -186,7 +220,7 @@ function AdminConfig() {
             style={{
               width: '44px', height: '24px', borderRadius: '12px', border: 'none',
               cursor: saving ? 'not-allowed' : 'pointer',
-              background: form.restrictEmailDomain ? 'var(--success)' : 'var(--bg-tertiary)',
+              background: form.restrictEmailDomain ? 'var(--brand)' : 'var(--bg-tertiary)',
               position: 'relative', transition: 'background 200ms', flexShrink: 0,
             }}>
             <div style={{
@@ -207,7 +241,7 @@ function AdminConfig() {
             onChange={e => setForm(f => ({ ...f, emailDomainWhitelist: e.target.value }))}
             className="rh-admin-input" style={inputStyle('emailDomainWhitelist')} placeholder="example.com,corp.com" disabled={saving || !form.restrictEmailDomain} />
           {errors.emailDomainWhitelist && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.emailDomainWhitelist}</div>}
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>多个域名用英文逗号分隔，留空则不限制</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>多个域名用英文逗号分隔，留空则不限制</div>
         </div>
       </div>
     </div>
@@ -215,4 +249,3 @@ function AdminConfig() {
 }
 
 window.AdminConfig = AdminConfig;
-

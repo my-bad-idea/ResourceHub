@@ -3,7 +3,7 @@ function ResourceTimeline({ resources, onEdit }) {
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
   const viewportWidth = window.useViewportWidth();
-  const { getLogoFallbackColor, getDomain, formatDate, formatMonth, recordResourceVisit } = window.helpers;
+  const { getCategoryTone, getLogoFallbackColor, getDomain, formatDate, formatMonth, recordResourceVisit } = window.helpers;
 
   const currentUser = state?.currentUser;
   const favorites = state?.favorites || [];
@@ -54,10 +54,10 @@ function ResourceTimeline({ resources, onEdit }) {
     padding: mobileLayout ? '0 10px' : '0 12px',
     borderRadius: '999px',
     border: isLightTheme
-      ? '1px solid color-mix(in srgb, var(--control-border) 34%, transparent)'
+      ? '1px solid color-mix(in srgb, var(--control-border) 72%, transparent)'
       : '1px solid color-mix(in srgb, var(--outline-strong) 24%, transparent)',
     background: isLightTheme
-      ? 'color-mix(in srgb, var(--surface-elevated) 92%, var(--surface-tint))'
+      ? 'var(--surface-elevated)'
       : 'color-mix(in srgb, var(--surface-elevated) 82%, var(--surface-tint))',
     color: 'var(--text-primary)',
     fontSize: '12px',
@@ -122,6 +122,7 @@ function ResourceTimeline({ resources, onEdit }) {
                   mobileLayout={mobileLayout}
                   compactLayout={compactLayout}
                   recordResourceVisit={recordResourceVisit}
+                  getCategoryTone={getCategoryTone}
                   getLogoFallbackColor={getLogoFallbackColor}
                   getDomain={getDomain}
                   formatDate={formatDate}
@@ -146,6 +147,7 @@ function TimelineItem({
   mobileLayout,
   compactLayout,
   recordResourceVisit,
+  getCategoryTone,
   getLogoFallbackColor,
   getDomain,
   formatDate,
@@ -155,8 +157,9 @@ function TimelineItem({
   const [heartScale, setHeartScale] = React.useState(1);
 
   const isFavorited = favorites.some((item) => item.id === resource.id);
-  const fallbackColor = getLogoFallbackColor(resource.name);
   const category = resource.category || (resource.categoryName ? { name: resource.categoryName, color: resource.categoryColor } : null);
+  const categoryTone = category ? getCategoryTone(category, resource.id || resource.name) : null;
+  const fallbackColor = getLogoFallbackColor(resource.name, category);
   const canEdit = currentUser && (currentUser.id === resource.ownerId || currentUser.role === 'admin');
   const domain = getDomain(resource.url);
   const hasDescription = Boolean(resource.description && resource.description.trim());
@@ -174,7 +177,7 @@ function TimelineItem({
     background: active
       ? 'color-mix(in srgb, var(--danger) 12%, var(--control-bg))'
       : isLightTheme
-        ? 'color-mix(in srgb, var(--surface-elevated) 96%, var(--control-bg-muted))'
+        ? 'var(--surface-elevated)'
         : 'color-mix(in srgb, var(--surface-elevated) 82%, var(--control-bg-muted))',
     color: active ? 'var(--danger)' : 'var(--text-secondary)',
     cursor: visible ? 'pointer' : 'default',
@@ -193,9 +196,9 @@ function TimelineItem({
     minHeight: '22px',
     padding: '0 7px',
     borderRadius: '999px',
-    border: '1px solid color-mix(in srgb, var(--outline-strong) 12%, transparent)',
+    border: '1px solid color-mix(in srgb, var(--control-border) 54%, transparent)',
     background: isLightTheme
-      ? 'color-mix(in srgb, var(--surface-elevated) 88%, var(--surface-muted))'
+      ? 'var(--surface-muted)'
       : 'color-mix(in srgb, var(--surface-elevated) 74%, var(--surface-muted))',
     color: 'var(--text-secondary)',
     fontSize: '10px',
@@ -241,20 +244,22 @@ function TimelineItem({
         padding: mobileLayout ? '12px 12px 12px 14px' : '14px 16px',
         borderRadius: mobileLayout ? '16px' : '18px',
         border: isLightTheme
-          ? '1px solid color-mix(in srgb, var(--control-border) 28%, transparent)'
+          ? (isHovered
+            ? '1px solid color-mix(in srgb, var(--brand) 24%, var(--border))'
+            : '1px solid var(--border)')
           : '1px solid color-mix(in srgb, var(--outline-strong) 24%, transparent)',
         background: isHovered
           ? (isLightTheme
-            ? 'color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint))'
-            : 'color-mix(in srgb, var(--surface-elevated) 84%, var(--surface-tint))')
+            ? 'var(--surface-elevated)'
+            : 'color-mix(in srgb, var(--surface-elevated) 88%, var(--surface-tint))')
           : (isLightTheme
-            ? 'color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint))'
+            ? 'var(--surface-elevated)'
             : 'color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint))'),
         boxShadow: isHovered
           ? (isLightTheme
-            ? '0 12px 22px color-mix(in srgb, var(--text-primary) 4%, transparent), inset 0 1px 0 color-mix(in srgb, white 44%, transparent)'
+            ? 'var(--shadow-card-hover)'
             : '0 14px 24px color-mix(in srgb, var(--bg-primary) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface-elevated) 18%, transparent)')
-          : 'none',
+          : (isLightTheme ? 'var(--shadow-card)' : 'none'),
         cursor: 'pointer',
         transition: 'background 150ms, border-color 150ms, box-shadow 150ms, transform 150ms',
         transform: isHovered ? 'translateY(-1px)' : 'translateY(0)',
@@ -289,7 +294,7 @@ function TimelineItem({
               objectFit: 'contain',
               flexShrink: 0,
               background: 'var(--surface-muted)',
-              border: '1px solid color-mix(in srgb, var(--outline-strong) 44%, var(--border))',
+              border: '1px solid color-mix(in srgb, var(--control-border) 70%, transparent)',
             }}
           />
         ) : (
@@ -298,7 +303,7 @@ function TimelineItem({
               width: mobileLayout ? '36px' : '38px',
               height: mobileLayout ? '36px' : '38px',
               borderRadius: '11px',
-              background: fallbackColor,
+              background: categoryTone?.accent || fallbackColor,
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
@@ -306,6 +311,7 @@ function TimelineItem({
               fontSize: mobileLayout ? '13px' : '14px',
               fontWeight: 800,
               flexShrink: 0,
+              boxShadow: '0 6px 14px color-mix(in srgb, var(--text-primary) 8%, transparent)',
             }}
           >
             {(resource.name || '?')[0].toUpperCase()}
@@ -330,9 +336,7 @@ function TimelineItem({
             <div
               style={{
                 fontSize: '11px',
-                color: isHovered
-                  ? 'color-mix(in srgb, var(--text-primary) 70%, var(--text-secondary))'
-                  : 'var(--text-secondary)',
+                color: isHovered ? 'var(--text-secondary)' : 'var(--text-tertiary)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -347,10 +351,13 @@ function TimelineItem({
               <span
                 style={{
                   ...pillStyle,
-                  background: category.color
-                    ? `color-mix(in srgb, ${category.color} 12%, var(--surface-elevated))`
+                  background: categoryTone
+                    ? categoryTone.soft
                     : pillStyle.background,
-                  color: category.color || 'var(--text-secondary)',
+                  color: categoryTone?.accent || 'var(--text-secondary)',
+                  border: categoryTone
+                    ? `1px solid ${categoryTone.border}`
+                    : pillStyle.border,
                 }}
               >
                 {category.name}
@@ -361,11 +368,11 @@ function TimelineItem({
                 ...pillStyle,
                 background: resource.visibility === 'private'
                   ? 'color-mix(in srgb, var(--danger) 14%, var(--surface-elevated))'
-                  : pillStyle.background,
+                  : 'var(--surface-muted)',
                 color: resource.visibility === 'private' ? 'var(--danger)' : 'var(--text-secondary)',
                 border: resource.visibility === 'private'
                   ? '1px solid color-mix(in srgb, var(--danger) 24%, var(--outline-strong))'
-                  : pillStyle.border,
+                  : '1px solid color-mix(in srgb, var(--control-border) 72%, transparent)',
               }}
             >
               {resource.visibility === 'private' ? '私有' : '公开'}
@@ -400,7 +407,7 @@ function TimelineItem({
               style={{
                 fontSize: '12px',
                 lineHeight: 1.45,
-                color: 'color-mix(in srgb, var(--text-secondary) 78%, transparent)',
+                color: 'var(--text-tertiary)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -411,11 +418,11 @@ function TimelineItem({
           )}
 
           <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '6px', minWidth: 0, alignItems: 'center' }}>
-            <span style={{ fontSize: '10px', color: 'color-mix(in srgb, var(--text-secondary) 84%, transparent)', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
               {summaryPrefix} {summaryDate}
             </span>
-            <span style={{ fontSize: '10px', color: 'color-mix(in srgb, var(--text-secondary) 44%, transparent)' }}>•</span>
-            <span style={{ fontSize: '10px', color: 'color-mix(in srgb, var(--text-secondary) 84%, transparent)', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '10px', color: 'color-mix(in srgb, var(--text-tertiary) 58%, transparent)' }}>•</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
               访问 {resource.visitCount || 0}
             </span>
           </div>

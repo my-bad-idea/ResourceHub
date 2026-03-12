@@ -8,7 +8,7 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
   const [heartScale, setHeartScale] = React.useState(1);
   const [favoriteLoading, setFavoriteLoading] = React.useState(false);
 
-  const { getLogoFallbackColor, getDomain, formatDate, recordResourceVisit } = window.helpers;
+  const { getCategoryTone, getLogoFallbackColor, getDomain, formatDate, recordResourceVisit } = window.helpers;
   const currentUser = state?.currentUser;
   const theme = state?.theme || window.getTheme?.() || 'system';
   const isDarkTheme = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -17,8 +17,9 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
   const isFavorited = state?.favorites?.some((item) => item.id === resource.id) ?? resource.isFavorited ?? false;
   const canEdit = currentUser && (currentUser.id === resource.ownerId || currentUser.role === 'admin');
 
-  const fallbackColor = getLogoFallbackColor(resource.name);
   const category = resource.category || (resource.categoryName ? { name: resource.categoryName, color: resource.categoryColor } : null);
+  const categoryTone = category ? getCategoryTone(category, resource.id || resource.name) : null;
+  const fallbackColor = getLogoFallbackColor(resource.name, category);
   const domain = getDomain(resource.url);
   const updatedLabel = formatDate(resource.updatedAt || resource.createdAt) || '刚刚更新';
   const hasDescription = Boolean(resource.description && resource.description.trim());
@@ -51,32 +52,32 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
   const tagGap = resultCompact ? '4px' : compactCard ? '4px' : featured ? (featuredCompact ? '4px' : '5px') : '5px';
   const metaFontSize = featured ? (featuredCompact ? '9px' : '10px') : resultCompact ? '8px' : '9px';
   const metaTextColor = featured
-    ? 'color-mix(in srgb, var(--text-secondary) 86%, transparent)'
+    ? 'var(--text-secondary)'
     : resultCompact
-      ? 'color-mix(in srgb, var(--text-secondary) 72%, transparent)'
-      : 'color-mix(in srgb, var(--text-secondary) 78%, transparent)';
+      ? 'var(--text-tertiary)'
+      : 'var(--text-secondary)';
   const metaDividerColor = featured
-    ? 'color-mix(in srgb, var(--text-secondary) 48%, transparent)'
+    ? 'color-mix(in srgb, var(--text-tertiary) 72%, transparent)'
     : resultCompact
-      ? 'color-mix(in srgb, var(--text-secondary) 36%, transparent)'
-      : 'color-mix(in srgb, var(--text-secondary) 42%, transparent)';
+      ? 'color-mix(in srgb, var(--text-tertiary) 58%, transparent)'
+      : 'color-mix(in srgb, var(--text-tertiary) 64%, transparent)';
   const badgePadding = resultCompact ? '1px 6px' : featuredCompact ? '2px 6px' : '2px 7px';
   const badgeFontSize = resultCompact ? '9px' : featuredCompact ? '9px' : '10px';
   const alwaysShowActions = mobileLayout && !featured;
   const showFavoriteAction = alwaysShowActions || isFavorited || isHovered || favoriteLoading;
   const showEditAction = alwaysShowActions || isHovered;
   const resultCardBorder = isLightTheme
-    ? 'color-mix(in srgb, var(--outline-strong) 36%, var(--border))'
+    ? 'var(--border)'
     : 'color-mix(in srgb, var(--outline-strong) 52%, var(--border))';
   const overviewCardBorder = isLightTheme
-    ? 'color-mix(in srgb, var(--outline-strong) 22%, var(--border))'
-    : 'color-mix(in srgb, var(--outline-strong) 34%, var(--border))';
+    ? 'color-mix(in srgb, var(--control-border) 76%, transparent)'
+    : 'color-mix(in srgb, var(--outline-strong) 40%, var(--border))';
   const resultCardBackground = isLightTheme
-    ? 'color-mix(in srgb, var(--surface-elevated) 99%, var(--bg-secondary))'
-    : 'var(--surface-elevated)';
+    ? 'var(--surface-elevated)'
+    : 'color-mix(in srgb, var(--surface-elevated) 94%, var(--bg-primary))';
   const overviewCardBackground = isLightTheme
-    ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 95%, var(--control-bg-muted)) 100%)'
-    : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 84%, var(--bg-primary)) 100%)';
+    ? 'var(--surface-elevated)'
+    : 'color-mix(in srgb, var(--surface-elevated) 94%, var(--bg-primary))';
 
   const handleCardClick = (e) => {
     if (e.target.closest('button')) return;
@@ -113,7 +114,7 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
     background: active
       ? 'color-mix(in srgb, var(--danger) 12%, var(--control-bg))'
       : isLightTheme
-        ? 'color-mix(in srgb, var(--surface-elevated) 96%, var(--control-bg-muted))'
+        ? 'var(--surface-elevated)'
         : 'color-mix(in srgb, var(--surface-elevated) 86%, var(--control-bg-muted))',
     color: active ? 'var(--danger)' : 'var(--text-secondary)',
     cursor: visible ? 'pointer' : 'default',
@@ -138,13 +139,11 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
     padding: featured ? (featuredCompact ? '2px 7px' : '3px 8px') : resultCompact ? '1px 6px' : '2px 7px',
     borderRadius: '999px',
     background: isLightTheme
-      ? 'color-mix(in srgb, var(--surface-elevated) 80%, var(--surface-muted))'
-      : 'color-mix(in srgb, var(--surface-elevated) 78%, var(--surface-muted))',
+      ? 'color-mix(in srgb, var(--surface-muted) 82%, var(--surface-elevated))'
+      : 'color-mix(in srgb, var(--surface-muted) 74%, var(--surface-elevated))',
     color: 'var(--text-secondary)',
     fontSize: featured ? (featuredCompact ? '9px' : '10px') : resultCompact ? '8px' : '9px',
-    border: featured
-      ? '1px solid color-mix(in srgb, var(--outline-strong) 12%, transparent)'
-      : '1px solid transparent',
+    border: '1px solid color-mix(in srgb, var(--control-border) 52%, transparent)',
     whiteSpace: 'nowrap',
   };
 
@@ -168,29 +167,31 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
         borderRadius: featured ? '20px' : resultCompact ? '13px' : '14px',
         border: `1px solid ${isHovered
           ? isLightTheme
-            ? 'color-mix(in srgb, var(--brand) 18%, var(--outline-strong))'
+            ? 'color-mix(in srgb, var(--brand) 24%, var(--border))'
             : 'color-mix(in srgb, var(--brand) 24%, var(--border))'
           : featured
             ? overviewCardBorder
             : resultCardBorder}`,
         background: isHovered
-          ? isLightTheme
-            ? 'color-mix(in srgb, var(--surface-elevated) 95%, var(--surface-tint))'
-            : 'color-mix(in srgb, var(--surface-elevated) 84%, var(--surface-tint))'
+          ? featured
+            ? (isLightTheme
+              ? 'var(--surface-elevated)'
+              : 'color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint))')
+            : resultCardBackground
           : featured
             ? overviewCardBackground
             : resultCardBackground,
         cursor: 'pointer',
         boxShadow: isHovered
           ? isLightTheme
-            ? '0 12px 22px color-mix(in srgb, var(--text-primary) 5%, transparent)'
+            ? 'var(--shadow-card-hover)'
             : 'var(--shadow-dropdown)'
           : featured
             ? isLightTheme
-              ? '0 14px 30px color-mix(in srgb, var(--text-primary) 5%, transparent)'
+              ? 'var(--shadow-card)'
               : '0 14px 28px color-mix(in srgb, var(--bg-primary) 20%, transparent)'
             : isLightTheme
-              ? '0 2px 6px color-mix(in srgb, var(--text-primary) 2%, transparent)'
+              ? 'var(--shadow-card)'
               : 'var(--shadow-card)',
         transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
         transition: 'transform 160ms, border-color 160ms, background 160ms, box-shadow 160ms',
@@ -217,7 +218,7 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
                 objectFit: 'contain',
                 flexShrink: 0,
                 background: 'var(--surface-muted)',
-                border: '1px solid color-mix(in srgb, var(--outline-strong) 54%, var(--border))',
+                border: '1px solid color-mix(in srgb, var(--control-border) 72%, transparent)',
               }}
             />
           ) : (
@@ -226,7 +227,7 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
                 width: mediaSize,
                 height: mediaSize,
                 borderRadius: mediaRadius,
-                background: fallbackColor,
+                background: categoryTone?.accent || fallbackColor,
                 color: '#fff',
                 display: 'flex',
                 alignItems: 'center',
@@ -234,6 +235,7 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
                 fontSize: featured ? (featuredCompact ? '16px' : '17px') : resultCompact ? '13px' : '14px',
                 fontWeight: 800,
                 flexShrink: 0,
+                boxShadow: '0 6px 14px color-mix(in srgb, var(--text-primary) 8%, transparent)',
               }}
             >
               {(resource.name || '?')[0].toUpperCase()}
@@ -264,9 +266,7 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
                   display: 'block',
                   maxWidth: '100%',
                   fontSize: domainSize,
-                  color: isHovered
-                    ? 'color-mix(in srgb, var(--text-primary) 72%, var(--text-secondary))'
-                    : 'var(--text-secondary)',
+                  color: isHovered ? 'var(--text-secondary)' : 'var(--text-tertiary)',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -283,13 +283,15 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
                   style={{
                     padding: badgePadding,
                     borderRadius: '999px',
-                    background: category.color ? `color-mix(in srgb, ${category.color} 12%, var(--surface-elevated))` : 'var(--surface-muted)',
-                    color: category.color || 'var(--text-primary)',
+                    background: categoryTone
+                      ? categoryTone.soft
+                      : 'var(--surface-muted)',
+                    color: categoryTone?.accent || 'var(--text-primary)',
                     fontSize: badgeFontSize,
                     fontWeight: featured ? 800 : 700,
-                    border: featured
-                      ? '1px solid color-mix(in srgb, var(--outline-strong) 16%, transparent)'
-                      : '1px solid transparent',
+                    border: categoryTone
+                      ? `1px solid ${categoryTone.border}`
+                      : '1px solid color-mix(in srgb, var(--control-border) 52%, transparent)',
                   }}
                 >
                   {category.name}
@@ -299,19 +301,17 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
                 style={{
                   padding: badgePadding,
                   borderRadius: '999px',
-                  background: resource.visibility === 'private'
-                    ? 'color-mix(in srgb, var(--danger) 14%, var(--surface-elevated))'
-                    : isLightTheme
-                      ? 'color-mix(in srgb, var(--surface-elevated) 76%, var(--surface-muted))'
-                      : 'color-mix(in srgb, var(--surface-elevated) 70%, var(--surface-muted))',
+                background: resource.visibility === 'private'
+                  ? 'color-mix(in srgb, var(--danger) 14%, var(--surface-elevated))'
+                  : isLightTheme
+                    ? 'var(--surface-muted)'
+                    : 'color-mix(in srgb, var(--surface-muted) 72%, var(--surface-elevated))',
                   color: resource.visibility === 'private' ? 'var(--danger)' : 'var(--text-secondary)',
                   fontSize: badgeFontSize,
                   fontWeight: 600,
-                  border: resource.visibility === 'private'
-                    ? '1px solid color-mix(in srgb, var(--danger) 22%, var(--outline-strong))'
-                    : featured
-                      ? '1px solid color-mix(in srgb, var(--outline-strong) 12%, transparent)'
-                      : '1px solid transparent',
+                border: resource.visibility === 'private'
+                  ? '1px solid color-mix(in srgb, var(--danger) 22%, var(--outline-strong))'
+                  : '1px solid color-mix(in srgb, var(--control-border) 72%, transparent)',
                 }}
               >
                 {resource.visibility === 'private' ? '私有' : '公开'}

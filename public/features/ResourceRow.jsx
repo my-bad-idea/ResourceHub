@@ -7,15 +7,16 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
   const [isHovered, setIsHovered] = React.useState(false);
   const [heartScale, setHeartScale] = React.useState(1);
 
-  const { getLogoFallbackColor, getDomain, formatDate, recordResourceVisit } = window.helpers;
+  const { getCategoryTone, getLogoFallbackColor, getDomain, formatDate, recordResourceVisit } = window.helpers;
   const currentUser = state?.currentUser;
   const theme = state?.theme || window.getTheme?.() || 'system';
   const isDarkTheme = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const isLightTheme = !isDarkTheme;
   const isFavorited = state?.favorites?.some(f => f.id === resource.id) ?? false;
   const canEdit = currentUser && (currentUser.id === resource.ownerId || currentUser.role === 'admin');
-  const fallbackColor = getLogoFallbackColor(resource.name);
   const category = resource.category || (resource.categoryName ? { name: resource.categoryName, color: resource.categoryColor } : null);
+  const categoryTone = category ? getCategoryTone(category, resource.id || resource.name) : null;
+  const fallbackColor = getLogoFallbackColor(resource.name, category);
   const domain = getDomain(resource.url);
   const updatedLabel = formatDate(resource.updatedAt || resource.createdAt) || '刚刚更新';
   const compactLayout = viewportWidth < 1120;
@@ -44,11 +45,11 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
   const showFavoriteAction = isFavorited || isHovered || mobileLayout;
   const showEditAction = canEdit && (isHovered || mobileLayout);
   const rowDividerColor = isLightTheme
-    ? '1px solid color-mix(in srgb, var(--control-border) 18%, transparent)'
+    ? '1px solid color-mix(in srgb, var(--control-border) 62%, transparent)'
     : '1px solid color-mix(in srgb, var(--outline-strong) 16%, transparent)';
   const rowHoverBackground = isLightTheme
-    ? 'color-mix(in srgb, var(--surface-elevated) 94%, var(--surface-tint))'
-    : 'color-mix(in srgb, var(--surface-elevated) 80%, var(--surface-tint))';
+    ? 'var(--surface-hover)'
+    : 'color-mix(in srgb, var(--surface-elevated) 82%, var(--control-bg-muted))';
   const rowActionButtonStyle = (active = false, visible = true) => ({
     width: '32px',
     height: '32px',
@@ -57,7 +58,7 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
     background: active
       ? 'color-mix(in srgb, var(--danger) 12%, var(--control-bg))'
       : isLightTheme
-        ? 'color-mix(in srgb, var(--surface-elevated) 96%, var(--control-bg-muted))'
+        ? 'var(--surface-elevated)'
         : 'color-mix(in srgb, var(--surface-elevated) 82%, var(--control-bg-muted))',
     color: active ? 'var(--danger)' : 'var(--text-secondary)',
     cursor: visible ? 'pointer' : 'default',
@@ -76,9 +77,9 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
     minHeight: '22px',
     padding: '0 7px',
     borderRadius: '999px',
-    border: '1px solid color-mix(in srgb, var(--outline-strong) 12%, transparent)',
+    border: '1px solid color-mix(in srgb, var(--control-border) 54%, transparent)',
     background: isLightTheme
-      ? 'color-mix(in srgb, var(--surface-elevated) 88%, var(--surface-muted))'
+      ? 'var(--surface-muted)'
       : 'color-mix(in srgb, var(--surface-elevated) 76%, var(--surface-muted))',
     color: 'var(--text-secondary)',
     fontSize: '10px',
@@ -119,7 +120,7 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
               objectFit: 'contain',
               flexShrink: 0,
               background: 'var(--surface-muted)',
-              border: '1px solid color-mix(in srgb, var(--outline-strong) 44%, var(--border))',
+              border: '1px solid color-mix(in srgb, var(--control-border) 70%, transparent)',
             }}
           />
         ) : (
@@ -128,7 +129,7 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
               width: mobileLayout ? '36px' : '38px',
               height: mobileLayout ? '36px' : '38px',
               borderRadius: '11px',
-              background: fallbackColor,
+              background: categoryTone?.accent || fallbackColor,
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
@@ -136,6 +137,7 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
               fontSize: mobileLayout ? '13px' : '14px',
               fontWeight: 800,
               flexShrink: 0,
+              boxShadow: '0 6px 14px color-mix(in srgb, var(--text-primary) 8%, transparent)',
             }}
           >
             {(resource.name || '?')[0].toUpperCase()}
@@ -160,9 +162,7 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
             <div
               style={{
                 fontSize: '11px',
-                color: isHovered
-                  ? 'color-mix(in srgb, var(--text-primary) 72%, var(--text-secondary))'
-                  : 'var(--text-secondary)',
+                color: isHovered ? 'var(--text-secondary)' : 'var(--text-tertiary)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -177,8 +177,13 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
               <span
                 style={{
                   ...infoPillStyle,
-                  background: category.color ? `color-mix(in srgb, ${category.color} 12%, var(--surface-elevated))` : infoPillStyle.background,
-                  color: category.color || 'var(--text-secondary)',
+                  background: categoryTone
+                    ? categoryTone.soft
+                    : infoPillStyle.background,
+                  color: categoryTone?.accent || 'var(--text-secondary)',
+                  border: categoryTone
+                    ? `1px solid ${categoryTone.border}`
+                    : infoPillStyle.border,
                 }}
               >
                 {category.name}
@@ -189,11 +194,11 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
                 ...infoPillStyle,
                 background: resource.visibility === 'private'
                   ? 'color-mix(in srgb, var(--danger) 14%, var(--surface-elevated))'
-                  : infoPillStyle.background,
+                  : 'var(--surface-muted)',
                 color: resource.visibility === 'private' ? 'var(--danger)' : 'var(--text-secondary)',
                 border: resource.visibility === 'private'
                   ? '1px solid color-mix(in srgb, var(--danger) 24%, var(--outline-strong))'
-                  : infoPillStyle.border,
+                  : '1px solid color-mix(in srgb, var(--control-border) 72%, transparent)',
               }}
             >
               {resource.visibility === 'private' ? '私有' : '公开'}
@@ -217,11 +222,11 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
             {resource.description || '暂无描述'}
           </div>
           <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '5px', minWidth: 0, alignItems: 'center' }}>
-            <span style={{ fontSize: '10px', color: 'color-mix(in srgb, var(--text-secondary) 84%, transparent)', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
               更新于 {updatedLabel}
             </span>
-            <span style={{ fontSize: '10px', color: 'color-mix(in srgb, var(--text-secondary) 44%, transparent)' }}>•</span>
-            <span style={{ fontSize: '10px', color: 'color-mix(in srgb, var(--text-secondary) 84%, transparent)', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '10px', color: 'color-mix(in srgb, var(--text-tertiary) 58%, transparent)' }}>•</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
               访问 {resource.visitCount || 0}
             </span>
           </div>
@@ -236,7 +241,7 @@ function ResourceRow({ resource, onEdit, isLast = false }) {
               style={{
                 ...infoPillStyle,
                 background: isLightTheme
-                  ? 'color-mix(in srgb, var(--surface-elevated) 86%, var(--surface-muted))'
+                  ? 'color-mix(in srgb, var(--surface-muted) 82%, var(--surface-elevated))'
                   : 'color-mix(in srgb, var(--surface-elevated) 72%, var(--surface-muted))',
               }}
             >

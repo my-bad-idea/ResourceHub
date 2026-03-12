@@ -1,15 +1,16 @@
-const PRESET_COLORS = ['#0071E3','#34C759','#FF3B30','#FF9500','#AF52DE','#FF2D55','#5856D6','#00C7BE','#30B0C7','#32ADE6','#FF6961','#6E6E73'];
+const PRESET_COLORS = ['#4F46E5', '#8B5CF6', '#14B8A6', '#F59E0B', '#F43F5E', '#2563EB', '#0EA5E9', '#64748B'];
 
 function AdminCategories() {
   const state = window.useAppState();
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
   const { Plus, Edit2, Trash2, Loader, Check } = lucide;
+  const { getCategoryTone } = window.helpers;
 
   const categories = state?.categories || [];
   const [showModal, setShowModal] = React.useState(false);
   const [editTarget, setEditTarget] = React.useState(null); // null = create
-  const [form, setForm] = React.useState({ name: '', color: '#0071E3' });
+  const [form, setForm] = React.useState({ name: '', color: '#4F46E5' });
   const [formError, setFormError] = React.useState('');
   const [saving, setSaving] = React.useState(false);
   const [deleteTarget, setDeleteTarget] = React.useState(null);
@@ -17,7 +18,7 @@ function AdminCategories() {
   const [page, setPage] = React.useState(1);
   const PAGE_SIZE = 20;
 
-  const openCreate = () => { setEditTarget(null); setForm({ name: '', color: '#0071E3' }); setFormError(''); setShowModal(true); };
+  const openCreate = () => { setEditTarget(null); setForm({ name: '', color: '#4F46E5' }); setFormError(''); setShowModal(true); };
   const openEdit = (cat) => { setEditTarget(cat); setForm({ name: cat.name, color: cat.color }); setFormError(''); setShowModal(true); };
 
   const handleSave = async () => {
@@ -72,26 +73,120 @@ function AdminCategories() {
   const totalPages = Math.ceil(categories.length / PAGE_SIZE);
   const pageData = categories.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const thStyle = { padding: '0 16px', textAlign: 'left', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' };
-  const tdStyle = { padding: '0 16px', fontSize: '14px', color: 'var(--text-primary)' };
+  const headerPanelStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap',
+    marginBottom: '18px',
+    padding: '18px 20px',
+    background: 'var(--surface-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '18px',
+    boxShadow: 'var(--shadow-card)',
+  };
+  const primaryButtonStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    minHeight: '38px',
+    padding: '0 16px',
+    background: 'var(--brand)',
+    color: '#fff',
+    border: '1px solid var(--brand)',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 700,
+    boxShadow: '0 10px 20px color-mix(in srgb, var(--brand) 16%, transparent)',
+  };
+  const secondaryButtonStyle = {
+    minHeight: '38px',
+    padding: '0 16px',
+    border: '1px solid var(--control-border)',
+    background: 'var(--surface-elevated)',
+    color: 'var(--text-primary)',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 600,
+    boxShadow: 'var(--shadow-control)',
+  };
+  const tableShellStyle = {
+    background: 'var(--surface-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '18px',
+    overflowX: 'auto',
+    boxShadow: 'var(--shadow-card)',
+  };
+  const thStyle = {
+    padding: '0 18px',
+    textAlign: 'left',
+    fontSize: '12px',
+    fontWeight: 700,
+    color: 'var(--text-secondary)',
+    letterSpacing: '0.02em',
+  };
+  const tdStyle = { padding: '0 18px', fontSize: '14px', color: 'var(--text-primary)' };
+  const iconButtonStyle = (tone = 'neutral') => ({
+    width: '32px',
+    height: '32px',
+    borderRadius: '10px',
+    border: `1px solid ${tone === 'danger' ? 'color-mix(in srgb, var(--danger) 20%, var(--control-border))' : 'var(--control-border)'}`,
+    background: tone === 'danger'
+      ? 'color-mix(in srgb, var(--danger) 8%, var(--surface-elevated))'
+      : 'var(--surface-elevated)',
+    color: tone === 'danger' ? 'var(--danger)' : 'var(--text-secondary)',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: 'var(--shadow-control)',
+  });
+  const pagerButtonStyle = (disabled) => ({
+    width: '36px',
+    height: '36px',
+    border: '1px solid var(--control-border)',
+    background: 'var(--surface-elevated)',
+    borderRadius: '10px',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    color: disabled ? 'var(--text-tertiary)' : 'var(--text-primary)',
+    boxShadow: 'var(--shadow-control)',
+    opacity: disabled ? 0.6 : 1,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  });
+  const modalLabelStyle = { fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' };
+  const modalInputStyle = (error = false) => ({
+    width: '100%',
+    padding: '10px 12px',
+    border: `1px solid ${error ? 'var(--danger)' : 'var(--control-border)'}`,
+    borderRadius: '10px',
+    background: 'var(--surface-elevated)',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    outline: 'none',
+    boxSizing: 'border-box',
+  });
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>类别管理</h2>
-        <button onClick={openCreate} style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '8px 16px', background: 'var(--brand)', color: '#fff',
-          border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px',
-        }}>
+      <div style={headerPanelStyle}>
+        <div style={{ display: 'grid', gap: '4px' }}>
+          <h2 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.03em' }}>类别管理</h2>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>管理资源分类名称与配色，保持后台和结果页的类别语义一致。</div>
+        </div>
+        <button onClick={openCreate} style={primaryButtonStyle}>
           <Plus size={15} /> 新增类别
         </button>
       </div>
 
-      <div style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '12px', overflowX: 'auto', boxShadow: '0 1px 4px rgba(18,32,57,0.08)' }}>
+      <div style={tableShellStyle}>
         <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: 'var(--surface-muted)', height: '44px' }}>
+            <tr style={{ background: 'var(--surface-muted)', height: '46px' }}>
               <th style={thStyle}>名称</th>
               <th style={thStyle}>颜色</th>
               <th style={thStyle}>资源数</th>
@@ -100,25 +195,41 @@ function AdminCategories() {
           </thead>
           <tbody>
             {pageData.length === 0 ? (
-              <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', height: '80px', color: 'var(--text-secondary)' }}>暂无类别</td></tr>
+              <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', height: '88px', color: 'var(--text-secondary)' }}>暂无类别</td></tr>
             ) : pageData.map(cat => (
-              <tr key={cat.id} style={{ height: '52px', borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)', transition: 'background 150ms ease' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in srgb, var(--brand) 10%, var(--bg-secondary))'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; }}>
-                <td style={tdStyle}>{cat.name}</td>
+              <tr
+                key={cat.id}
+                style={{ height: '56px', borderTop: '1px solid color-mix(in srgb, var(--border) 86%, transparent)', background: 'var(--surface-elevated)', transition: 'background 150ms ease' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-hover)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface-elevated)'; }}
+              >
+                <td style={{ ...tdStyle, fontWeight: 600 }}>{cat.name}</td>
                 <td style={tdStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{cat.color}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        minHeight: '30px',
+                        padding: '0 10px',
+                        borderRadius: '999px',
+                        background: getCategoryTone(cat, cat.id).soft,
+                        border: `1px solid ${getCategoryTone(cat, cat.id).border}`,
+                      }}
+                    >
+                      <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{cat.color}</span>
+                    </span>
                   </div>
                 </td>
-                <td style={tdStyle}>{cat.resourceCount ?? 0}</td>
+                <td style={{ ...tdStyle, fontWeight: 600 }}>{cat.resourceCount ?? 0}</td>
                 <td style={tdStyle}>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => openEdit(cat)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+                    <button onClick={() => openEdit(cat)} style={iconButtonStyle('neutral')}>
                       <Edit2 size={14} />
                     </button>
-                    <button onClick={() => setDeleteTarget(cat)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--danger)', display: 'flex', alignItems: 'center' }}>
+                    <button onClick={() => setDeleteTarget(cat)} style={iconButtonStyle('danger')}>
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -133,12 +244,12 @@ function AdminCategories() {
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-            style={{ padding: '6px 12px', border: '1px solid var(--border)', background: 'var(--bg-primary)', borderRadius: '6px', cursor: 'pointer', color: 'var(--text-primary)' }}>
+            style={pagerButtonStyle(page === 1)}>
             <lucide.ChevronLeft size={14} />
           </button>
-          <span style={{ padding: '6px 12px', fontSize: '14px', color: 'var(--text-secondary)' }}>{page} / {totalPages}</span>
+          <span style={{ padding: '6px 12px', fontSize: '14px', color: 'var(--text-secondary)', minWidth: '72px', textAlign: 'center' }}>{page} / {totalPages}</span>
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-            style={{ padding: '6px 12px', border: '1px solid var(--border)', background: 'var(--bg-primary)', borderRadius: '6px', cursor: 'pointer', color: 'var(--text-primary)' }}>
+            style={pagerButtonStyle(page === totalPages)}>
             <lucide.ChevronRight size={14} />
           </button>
         </div>
@@ -148,22 +259,17 @@ function AdminCategories() {
       <window.Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editTarget ? '编辑类别' : '新增类别'} width="480px">
         <div>
           <div style={{ marginBottom: '16px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>类别名称</label>
+            <label style={modalLabelStyle}>类别名称</label>
             <input value={form.name} onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setFormError(''); }}
-              style={{
-                width: '100%', padding: '8px 12px',
-                border: `1px solid ${formError ? 'var(--danger)' : 'var(--border)'}`,
-                borderRadius: '8px', background: 'var(--bg-secondary)', color: 'var(--text-primary)',
-                fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-              }} placeholder="输入类别名称" disabled={saving} />
+              style={modalInputStyle(Boolean(formError))} placeholder="输入类别名称" disabled={saving} />
             {formError && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{formError}</div>}
           </div>
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>颜色</label>
+            <label style={modalLabelStyle}>颜色</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
               {PRESET_COLORS.map(c => (
                 <button key={c} onClick={() => setForm(f => ({ ...f, color: c }))} style={{
-                  width: '28px', height: '28px', borderRadius: '50%', background: c, border: 'none', cursor: 'pointer',
+                  width: '30px', height: '30px', borderRadius: '50%', background: c, border: 'none', cursor: 'pointer',
                   outline: form.color === c ? `3px solid ${c}` : '3px solid transparent',
                   outlineOffset: '2px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -174,24 +280,14 @@ function AdminCategories() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input type="color" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-                style={{ width: '36px', height: '28px', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer', padding: '0' }} />
+                style={{ width: '38px', height: '32px', border: '1px solid var(--control-border)', borderRadius: '8px', cursor: 'pointer', padding: '0', background: 'var(--surface-elevated)' }} />
               <input value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-                style={{
-                  flex: 1, padding: '6px 10px', border: '1px solid var(--border)', borderRadius: '8px',
-                  background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none', fontFamily: 'monospace',
-                }} placeholder="#0071E3" />
+                style={{ ...modalInputStyle(false), flex: 1, padding: '8px 10px', fontFamily: 'monospace' }} placeholder="#4F46E5" />
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-            <button onClick={() => setShowModal(false)} disabled={saving} style={{
-              padding: '8px 20px', border: '1px solid var(--border)', background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)', borderRadius: '8px', cursor: 'pointer', fontSize: '14px',
-            }}>取消</button>
-            <button onClick={handleSave} disabled={saving} style={{
-              padding: '8px 20px', background: 'var(--brand)', color: '#fff', border: 'none',
-              borderRadius: '8px', cursor: saving ? 'not-allowed' : 'pointer', fontSize: '14px',
-              opacity: saving ? 0.8 : 1, display: 'flex', alignItems: 'center', gap: '6px',
-            }}>
+            <button onClick={() => setShowModal(false)} disabled={saving} style={secondaryButtonStyle}>取消</button>
+            <button onClick={handleSave} disabled={saving} style={{ ...primaryButtonStyle, opacity: saving ? 0.8 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>
               {saving && <Loader size={14} />} 保存
             </button>
           </div>
@@ -212,4 +308,3 @@ function AdminCategories() {
 }
 
 window.AdminCategories = AdminCategories;
-

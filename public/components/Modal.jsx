@@ -47,7 +47,7 @@ function Modal({ isOpen, onClose, title, children, width = '520px', closeOnBackd
   return React.createElement('div', {
     style: {
       position: 'fixed', inset: 0,
-      background: 'rgba(0,0,0,0.5)',
+      background: 'rgba(19,34,56,0.28)',
       zIndex: 1000,
       display: 'flex',
       alignItems: 'center',
@@ -64,9 +64,9 @@ function Modal({ isOpen, onClose, title, children, width = '520px', closeOnBackd
         width,
         maxWidth: '100%',
         maxHeight: '90vh',
-        background: 'var(--bg-primary)',
+        background: 'var(--surface-elevated)',
         border: '1px solid var(--border)',
-        borderRadius: '12px',
+        borderRadius: '16px',
         boxShadow: 'var(--shadow-modal)',
         display: 'flex',
         flexDirection: 'column',
@@ -79,7 +79,7 @@ function Modal({ isOpen, onClose, title, children, width = '520px', closeOnBackd
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '20px 24px 16px',
+          padding: '18px 22px 14px',
           borderBottom: '1px solid var(--border)',
           flexShrink: 0,
         }
@@ -90,15 +90,15 @@ function Modal({ isOpen, onClose, title, children, width = '520px', closeOnBackd
         React.createElement('button', {
           onClick: onClose,
           style: {
-            background: 'none', border: 'none', cursor: 'pointer',
+            background: 'var(--surface-muted)', border: '1px solid color-mix(in srgb, var(--control-border) 72%, transparent)', cursor: 'pointer',
             color: 'var(--text-secondary)', padding: '4px',
-            borderRadius: '6px', display: 'flex', alignItems: 'center',
+            borderRadius: '10px', display: 'flex', alignItems: 'center',
           }
         }, React.createElement(X, { size: 18 }))
       ),
       // Content (scrollable)
       React.createElement('div', {
-        style: { padding: '20px 24px', overflowY: 'auto', flex: 1 }
+        style: { padding: '20px 22px 22px', overflowY: 'auto', flex: 1 }
       }, children)
     )
   );
