@@ -755,14 +755,13 @@ function HomePage({ pageType = 'overview' } = {}) {
             position: 'relative',
             display: 'grid',
             gap: isMobile ? '10px' : '12px',
-            paddingTop: isOverviewMode ? (isMobile ? '16px' : '22px') : resultsTopPadding,
+            paddingTop: isOverviewMode ? (isMobile ? '8px' : '12px') : resultsTopPadding,
             paddingBottom: isOverviewMode ? '8px' : 0,
             borderRadius: isOverviewMode ? '20px' : 0,
-            minHeight: 'calc(100vh - var(--app-header-height, 73px) - 24px)',
             background: isOverviewMode
               ? (isLightTheme
-                ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, var(--surface-muted)) 0%, color-mix(in srgb, var(--surface-elevated) 92%, var(--bg-primary)) 100%)'
-                : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 84%, var(--surface-muted)) 0%, color-mix(in srgb, var(--surface-elevated) 80%, var(--bg-primary)) 100%)')
+                ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 97%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted)) 100%)'
+                : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 91%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)')
               : 'transparent',
           }}
         >
@@ -1378,12 +1377,12 @@ function HomeOverview({
                       ? 'color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted))'
                       : 'color-mix(in srgb, var(--surface-elevated) 82%, var(--bg-primary))')
                     : (isLightTheme
-                      ? 'color-mix(in srgb, var(--surface-elevated) 98%, var(--control-bg-muted))'
-                      : 'color-mix(in srgb, var(--surface-elevated) 88%, var(--bg-primary))'),
+                      ? `linear-gradient(180deg, color-mix(in srgb, ${card.accent} 10%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--control-bg-muted)) 100%)`
+                      : `linear-gradient(180deg, color-mix(in srgb, ${card.accent} 16%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)`),
                   color: 'var(--text-primary)',
                   boxShadow: isZeroMetric
                     ? 'none'
-                    : `inset 0 1px 0 color-mix(in srgb, ${card.accent} 10%, transparent)`,
+                    : `inset 0 1px 0 color-mix(in srgb, ${card.accent} 14%, transparent)`,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
@@ -1480,8 +1479,8 @@ function HomeOverview({
                     background: isEmptyEntry
                       ? quickAccessEmptySurfaceStyle.background
                       : (isLightTheme
-                        ? 'color-mix(in srgb, var(--surface-elevated) 98%, var(--surface-tint))'
-                        : 'color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint))'),
+                        ? `linear-gradient(180deg, color-mix(in srgb, ${entry.accent || 'var(--brand)'} ${hoveredQuickAccessKey === entry.key ? 14 : 8}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 95%, var(--control-bg-muted)) 100%)`
+                        : `linear-gradient(180deg, color-mix(in srgb, ${entry.accent || 'var(--brand)'} ${hoveredQuickAccessKey === entry.key ? 20 : 12}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)`),
                     display: 'grid',
                     gap: '6px',
                     textAlign: 'left',
@@ -1555,11 +1554,11 @@ function HomeOverview({
                 borderRadius: '16px',
                 ...surfaceStyle,
                 border: isLightTheme
-                  ? `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 26 : 16}%, var(--control-border))`
-                  : `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 30 : 18}%, var(--border))`,
+                  ? `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 34 : 18}%, var(--control-border))`
+                  : `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 40 : 24}%, var(--border))`,
                 background: isLightTheme
-                  ? `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 10 : 6}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint)) 100%)`
-                  : `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 14 : 9}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 100%)`,
+                  ? `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 16 : 8}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint)) 100%)`
+                  : `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 22 : 12}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 100%)`,
                 display: 'grid',
                 gap: '8px',
                 textAlign: 'left',
