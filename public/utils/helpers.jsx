@@ -1,4 +1,4 @@
-﻿// Helper utilities
+// Helper utilities
 const COLOR_POOL = ['#5856D6', '#FF9500', '#34C759', '#FF3B30', '#0071E3', '#FF2D55', '#AF52DE', '#00C7BE'];
 
 function getLogoFallbackColor(name) {
@@ -8,7 +8,19 @@ function getLogoFallbackColor(name) {
 
 function formatDate(timestamp) {
   if (!timestamp) return '';
-  const date = new Date(timestamp * 1000);
+
+  let seconds = timestamp;
+  if (seconds > 1e12) {
+    seconds = Math.floor(seconds / 1000);
+  }
+
+  const date = new Date(seconds * 1000);
+  const now = new Date();
+
+  if (date.toDateString() === now.toDateString()) {
+    return '今天';
+  }
+
   return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 

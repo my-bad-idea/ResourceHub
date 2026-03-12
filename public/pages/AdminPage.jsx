@@ -1,5 +1,16 @@
+const ADMIN_TABS = ['categories', 'tags', 'users', 'config', 'email'];
+
 function AdminPage() {
-  const [activeTab, setActiveTab] = React.useState('categories');
+  const { route, navigate } = window.useRouter();
+  const path = route.path || '';
+  const subpath = path.replace(/^\/admin\/?/, '') || 'categories';
+  const activeTab = ADMIN_TABS.includes(subpath) ? subpath : 'categories';
+
+  React.useEffect(() => {
+    if (!ADMIN_TABS.includes(subpath)) {
+      navigate('#/admin/categories');
+    }
+  }, [subpath, navigate]);
 
   const tabContent = {
     categories: React.createElement(window.AdminCategories, null),
@@ -10,7 +21,7 @@ function AdminPage() {
   };
 
   return (
-    <window.AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
+    <window.AdminLayout activeTab={activeTab}>
       {tabContent[activeTab] || null}
     </window.AdminLayout>
   );

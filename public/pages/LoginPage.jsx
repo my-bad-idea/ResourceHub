@@ -39,7 +39,7 @@ function LoginPage() {
     <window.AuthLayout>
       <div style={{ width: '400px', maxWidth: '100%' }}>
         <div style={{
-          background: 'color-mix(in srgb, var(--surface-elevated) 94%, var(--surface-muted))',
+          background: 'var(--bg-secondary)',
           border: '1px solid color-mix(in srgb, var(--outline-strong) 84%, var(--border))',
           borderRadius: '24px',
           padding: '36px',
@@ -67,6 +67,7 @@ function LoginPage() {
             <div style={{ marginBottom: '14px' }}>
               <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>用户名</label>
               <input
+                className="rh-auth-input"
                 type="text" value={form.username}
                 name="username"
                 autoComplete="username"
@@ -77,7 +78,7 @@ function LoginPage() {
                 style={{
                   width: '100%', padding: '9px 12px',
                   border: '1px solid var(--border)', borderRadius: '8px',
-                  background: 'var(--bg-primary)', color: 'var(--text-primary)',
+                  background: 'var(--bg-secondary)', color: 'var(--text-primary)',
                   fontSize: '14px', outline: 'none', boxSizing: 'border-box',
                 }}
               />
@@ -86,6 +87,7 @@ function LoginPage() {
               <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>密码</label>
               <div style={{ position: 'relative' }}>
                 <input
+                  className="rh-auth-input"
                   type={showPassword ? 'text' : 'password'} value={form.password}
                   name="password"
                   autoComplete="current-password"
@@ -96,7 +98,7 @@ function LoginPage() {
                   style={{
                     width: '100%', padding: '9px 40px 9px 12px',
                     border: '1px solid var(--border)', borderRadius: '8px',
-                    background: 'var(--bg-primary)', color: 'var(--text-primary)',
+                    background: 'var(--bg-secondary)', color: 'var(--text-primary)',
                     fontSize: '14px', outline: 'none', boxSizing: 'border-box',
                   }}
                 />
@@ -115,7 +117,10 @@ function LoginPage() {
             </div>
 
             {error && (
-              <div style={{ fontSize: '13px', color: 'var(--danger)', marginBottom: '12px' }}>{error}</div>
+              <div style={{ fontSize: '13px', color: 'var(--danger)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--danger)', flexShrink: 0 }} aria-hidden="true" />
+                {error}
+              </div>
             )}
 
             <button type="submit" disabled={loading} style={{
@@ -133,12 +138,12 @@ function LoginPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               {config?.enableRegister ? (
                 <button type="button" onClick={() => navigate('#/register')}
-                  style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontSize: '13px' }}>
+                  style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontSize: '13px', borderRadius: '4px' }}>
                   注册账号
                 </button>
               ) : <span />}
               <button type="button" onClick={() => navigate('#/forgot-password')}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '13px' }}>
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '13px', borderRadius: '4px' }}>
                 忘记密码？
               </button>
             </div>

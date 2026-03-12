@@ -57,7 +57,7 @@ function SetupPage() {
   const inputStyle = (field) => ({
     width: '100%', padding: '9px 12px',
     border: `1px solid ${errors[field] ? 'var(--danger)' : 'var(--border)'}`,
-    borderRadius: '8px', background: 'var(--bg-primary)',
+    borderRadius: '8px', background: 'var(--bg-secondary)',
     color: 'var(--text-primary)', fontSize: '14px',
     outline: 'none', boxSizing: 'border-box',
   });
@@ -101,6 +101,7 @@ function SetupPage() {
               <div key={key} style={{ marginBottom: '16px' }}>
                 <label style={labelStyle}>{label}</label>
                 <input
+                  className="rh-auth-input"
                   type={type} name={key} value={form[key]} placeholder={placeholder}
                   autoComplete={autoComplete}
                   onChange={(e) => setForm(f => ({ ...f, [key]: e.target.value }))}
@@ -113,6 +114,7 @@ function SetupPage() {
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>管理员密码</label>
               <input
+                className="rh-auth-input"
                 type="password" name="new-password" value={form.password} placeholder="至少8位，含字母和数字"
                 autoComplete="new-password"
                 onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
@@ -125,6 +127,7 @@ function SetupPage() {
             <div style={{ marginBottom: '24px' }}>
               <label style={labelStyle}>确认密码</label>
               <input
+                className="rh-auth-input"
                 type="password" name="confirm-password" value={form.confirmPassword} placeholder="再次输入密码"
                 autoComplete="new-password"
                 onChange={(e) => setForm(f => ({ ...f, confirmPassword: e.target.value }))}

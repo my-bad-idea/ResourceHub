@@ -111,12 +111,19 @@ function App() {
     }
   }, [currentToken, currentUserId, hydrateAuthenticatedPreferences, initializing]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 3. Admin route guard
+  // 3. Admin route guard（所有 /admin、/admin/* 均需管理员）
   React.useEffect(() => {
-    if (!initializing && path === '/admin' && !isAdmin) {
+    if (!initializing && path.startsWith('/admin') && !isAdmin) {
       navigate('#/');
     }
-  }, [initializing, path, isAdmin]);
+  }, [initializing, path, isAdmin, navigate]);
+
+  // 4. /admin 无子路径时重定向到类别管理
+  React.useEffect(() => {
+    if (!initializing && isAdmin && (path === '/admin' || path === '/admin/')) {
+      navigate('#/admin/categories');
+    }
+  }, [initializing, isAdmin, path, navigate]);
 
   React.useEffect(() => {
     if (!initializing && path === '/login' && currentToken && currentUserId) {
@@ -153,8 +160,9 @@ function App() {
   if (path === '/register') return <window.RegisterPage />;
   if (path === '/forgot-password') return <window.ForgotPasswordPage />;
   if (path === '/reset-password') return <window.ResetPasswordPage />;
-  if (path === '/admin') {
+  if (path.startsWith('/admin')) {
     if (!isAdmin) return null;
+    if (path === '/admin' || path === '/admin/') return null;
     return <window.AdminPage />;
   }
   if (path === '/resources') return <window.HomePage pageType="results" />;

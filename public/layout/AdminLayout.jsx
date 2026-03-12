@@ -1,5 +1,5 @@
-﻿// AdminLayout.jsx
-function AdminLayout({ children, activeTab, onTabChange }) {
+// AdminLayout.jsx
+function AdminLayout({ children, activeTab }) {
   const { navigate } = window.useRouter();
   const state = window.useAppState();
   const dispatch = window.useAppDispatch();
@@ -39,20 +39,21 @@ function AdminLayout({ children, activeTab, onTabChange }) {
     cursor: 'pointer',
     textAlign: 'left',
     fontSize: '14px',
-    background: isSelected ? 'rgba(0,113,227,0.10)' : 'none',
+    background: isSelected ? 'color-mix(in srgb, var(--brand) 10%, transparent)' : 'none',
     color: isSelected ? 'var(--brand)' : 'var(--text-primary)',
     fontWeight: isSelected ? 600 : 400,
     transition: 'background 150ms',
   });
 
+  const pageBackground = 'linear-gradient(180deg, color-mix(in srgb, var(--surface-tint) 34%, var(--bg-primary)) 0%, var(--bg-primary) 260px), var(--bg-primary)';
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
+    <div style={{ minHeight: '100vh', background: pageBackground }}>
       <window.Header showSearch={false} />
       <div style={{ display: 'flex', flexDirection: isStacked ? 'column' : 'row', minHeight: 'calc(100vh - 72px)' }}>
         <div style={{
           width: isStacked ? '100%' : '200px',
           flexShrink: 0,
-          background: 'var(--bg-secondary)',
+          background: 'transparent',
           borderRight: isStacked ? 'none' : '1px solid var(--border)',
           borderBottom: isStacked ? '1px solid var(--border)' : 'none',
           position: isStacked ? 'static' : 'sticky',
@@ -98,10 +99,10 @@ function AdminLayout({ children, activeTab, onTabChange }) {
               return (
                 <button
                   key={key}
-                  onClick={() => onTabChange(key)}
+                  onClick={() => navigate('#/admin/' + key)}
                   style={navButtonStyle(isSelected)}
                   onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-tertiary)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = isSelected ? 'rgba(0,113,227,0.10)' : 'none'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = isSelected ? 'color-mix(in srgb, var(--brand) 10%, transparent)' : 'none'; }}
                 >
                   <Icon size={15} style={{ color: isSelected ? 'var(--brand)' : 'var(--text-secondary)' }} />
                   {label}
@@ -116,6 +117,7 @@ function AdminLayout({ children, activeTab, onTabChange }) {
           minWidth: 0,
           padding: viewportWidth < 640 ? '16px' : '24px',
           overflowX: 'hidden',
+          background: 'transparent',
         }}>
           {children}
         </main>

@@ -1,4 +1,4 @@
-﻿const PRESET_COLORS = ['#0071E3','#34C759','#FF3B30','#FF9500','#AF52DE','#FF2D55','#5856D6','#00C7BE','#30B0C7','#32ADE6','#FF6961','#6E6E73'];
+const PRESET_COLORS = ['#0071E3','#34C759','#FF3B30','#FF9500','#AF52DE','#FF2D55','#5856D6','#00C7BE','#30B0C7','#32ADE6','#FF6961','#6E6E73'];
 
 function AdminCategories() {
   const state = window.useAppState();
@@ -88,10 +88,10 @@ function AdminCategories() {
         </button>
       </div>
 
-      <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '12px', overflowX: 'auto' }}>
+      <div style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '12px', overflowX: 'auto', boxShadow: '0 1px 4px rgba(18,32,57,0.08)' }}>
         <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: 'var(--bg-secondary)', height: '44px' }}>
+            <tr style={{ background: 'var(--surface-muted)', height: '44px' }}>
               <th style={thStyle}>名称</th>
               <th style={thStyle}>颜色</th>
               <th style={thStyle}>资源数</th>
@@ -102,9 +102,9 @@ function AdminCategories() {
             {pageData.length === 0 ? (
               <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', height: '80px', color: 'var(--text-secondary)' }}>暂无类别</td></tr>
             ) : pageData.map(cat => (
-              <tr key={cat.id} style={{ height: '52px', borderTop: '1px solid var(--border)' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+              <tr key={cat.id} style={{ height: '52px', borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)', transition: 'background 150ms ease' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in srgb, var(--brand) 10%, var(--bg-secondary))'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; }}>
                 <td style={tdStyle}>{cat.name}</td>
                 <td style={tdStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -153,7 +153,7 @@ function AdminCategories() {
               style={{
                 width: '100%', padding: '8px 12px',
                 border: `1px solid ${formError ? 'var(--danger)' : 'var(--border)'}`,
-                borderRadius: '8px', background: 'var(--bg-primary)', color: 'var(--text-primary)',
+                borderRadius: '8px', background: 'var(--bg-secondary)', color: 'var(--text-primary)',
                 fontSize: '14px', outline: 'none', boxSizing: 'border-box',
               }} placeholder="输入类别名称" disabled={saving} />
             {formError && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{formError}</div>}
@@ -178,7 +178,7 @@ function AdminCategories() {
               <input value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
                 style={{
                   flex: 1, padding: '6px 10px', border: '1px solid var(--border)', borderRadius: '8px',
-                  background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none', fontFamily: 'monospace',
+                  background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none', fontFamily: 'monospace',
                 }} placeholder="#0071E3" />
             </div>
           </div>

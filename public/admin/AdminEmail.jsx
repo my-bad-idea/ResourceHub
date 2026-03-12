@@ -87,7 +87,9 @@ function AdminEmail() {
     width: '100%', padding: '9px 12px', boxSizing: 'border-box',
     border: `1px solid ${errors[field] ? 'var(--danger)' : 'var(--border)'}`,
     borderRadius: '8px',
-    background: 'var(--bg-primary)', color: 'var(--text-primary)',
+    background: 'var(--bg-secondary)',
+    backgroundColor: 'var(--bg-secondary)',
+    color: 'var(--text-primary)',
     fontSize: '14px', outline: 'none',
   });
   const labelStyle = { fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' };
@@ -130,7 +132,7 @@ function AdminEmail() {
 
       {!form.smtpHost && (
         <div style={{
-          background: 'rgba(0,113,227,0.06)', border: '1px solid rgba(0,113,227,0.2)',
+          background: 'color-mix(in srgb, var(--brand) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--brand) 20%, transparent)',
           borderRadius: '10px', padding: '12px 16px', marginBottom: '20px',
           fontSize: '13px', color: 'var(--text-secondary)',
         }}>
@@ -138,10 +140,10 @@ function AdminEmail() {
         </div>
       )}
 
-      <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', maxWidth: '720px' }}>
+      <div style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', maxWidth: '720px' }}>
         <div style={fieldStyle}>
           <label style={labelStyle}>SMTP 主机</label>
-          <input value={form.smtpHost} onChange={e => setForm(f => ({ ...f, smtpHost: e.target.value }))}
+          <input className="rh-admin-input" value={form.smtpHost} onChange={e => setForm(f => ({ ...f, smtpHost: e.target.value }))}
             style={inputStyle('smtpHost')} placeholder="smtp.example.com（留空使用模拟模式）" disabled={saving} />
           {errors.smtpHost && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.smtpHost}</div>}
         </div>
@@ -149,7 +151,7 @@ function AdminEmail() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', ...fieldStyle }}>
           <div>
             <label style={labelStyle}>SMTP 端口</label>
-            <input type="number" value={form.smtpPort} min={1} max={65535}
+            <input className="rh-admin-input" type="number" value={form.smtpPort} min={1} max={65535}
               onChange={e => setForm(f => ({ ...f, smtpPort: e.target.value }))}
               style={inputStyle('smtpPort')} placeholder="465" disabled={saving} />
             {errors.smtpPort && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.smtpPort}</div>}
@@ -173,7 +175,7 @@ function AdminEmail() {
 
         <div style={fieldStyle}>
           <label style={labelStyle}>SMTP 用户名</label>
-          <input value={form.smtpUser} onChange={e => setForm(f => ({ ...f, smtpUser: e.target.value }))}
+          <input className="rh-admin-input" value={form.smtpUser} onChange={e => setForm(f => ({ ...f, smtpUser: e.target.value }))}
             style={inputStyle('smtpUser')} placeholder="your@email.com" disabled={saving} />
           {errors.smtpUser && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.smtpUser}</div>}
         </div>
@@ -182,6 +184,7 @@ function AdminEmail() {
           <label style={labelStyle}>SMTP 密码</label>
           <div style={{ position: 'relative' }}>
             <input
+              className="rh-admin-input"
               type={showPassword ? 'text' : 'password'}
               autoComplete="off"
               value={form.smtpPassword}
@@ -204,13 +207,13 @@ function AdminEmail() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
             <div style={fieldStyle}>
               <label style={labelStyle}>发件人名称</label>
-              <input value={form.fromName} onChange={e => setForm(f => ({ ...f, fromName: e.target.value }))}
+              <input className="rh-admin-input" value={form.fromName} onChange={e => setForm(f => ({ ...f, fromName: e.target.value }))}
                 style={inputStyle('fromName')} placeholder="资源导航系统" disabled={saving} />
               {errors.fromName && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.fromName}</div>}
             </div>
             <div style={fieldStyle}>
               <label style={labelStyle}>发件人邮箱</label>
-              <input value={form.fromEmail} onChange={e => setForm(f => ({ ...f, fromEmail: e.target.value }))}
+              <input className="rh-admin-input" value={form.fromEmail} onChange={e => setForm(f => ({ ...f, fromEmail: e.target.value }))}
                 style={inputStyle('fromEmail')} placeholder="noreply@example.com" disabled={saving} />
               {errors.fromEmail && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.fromEmail}</div>}
             </div>

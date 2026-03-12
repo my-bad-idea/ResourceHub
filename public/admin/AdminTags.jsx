@@ -1,4 +1,4 @@
-﻿function AdminTags() {
+function AdminTags() {
   const state = window.useAppState();
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
@@ -104,10 +104,10 @@
       {loadingTags ? (
         <window.Skeleton rows={5} type="row" />
       ) : (
-        <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '12px', overflowX: 'auto' }}>
+        <div style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '12px', overflowX: 'auto', boxShadow: '0 1px 4px rgba(18,32,57,0.08)' }}>
           <table style={{ width: '100%', minWidth: '520px', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: 'var(--bg-secondary)', height: '44px' }}>
+              <tr style={{ background: 'var(--surface-muted)', height: '44px' }}>
                 <th style={{ ...thStyle, width: '44px' }}>
                   <input type="checkbox" checked={allPageChecked} onChange={toggleAll}
                     style={{ cursor: 'pointer' }} />
@@ -121,9 +121,9 @@
               {pageData.length === 0 ? (
                 <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', height: '80px', color: 'var(--text-secondary)' }}>暂无标签</td></tr>
               ) : pageData.map(item => (
-                <tr key={item.tag} style={{ height: '52px', borderTop: '1px solid var(--border)' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                <tr key={item.tag} style={{ height: '52px', borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)', transition: 'background 150ms ease' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in srgb, var(--brand) 10%, var(--bg-secondary))'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; }}>
                   <td style={{ ...tdStyle, width: '44px' }}>
                     <input type="checkbox" checked={checked.has(item.tag)}
                       onChange={() => setChecked(prev => { const s = new Set(prev); s.has(item.tag) ? s.delete(item.tag) : s.add(item.tag); return s; })}

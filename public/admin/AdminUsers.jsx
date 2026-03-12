@@ -1,4 +1,4 @@
-﻿function AdminUsers() {
+function AdminUsers() {
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
   const { Plus, Edit2, Trash2, Key, Loader } = lucide;
@@ -137,7 +137,7 @@
   const inputStyle = (field) => ({
     width: '100%', padding: '8px 12px', boxSizing: 'border-box',
     border: `1px solid ${formErrors[field] ? 'var(--danger)' : 'var(--border)'}`,
-    borderRadius: '8px', background: 'var(--bg-primary)', color: 'var(--text-primary)',
+    borderRadius: '8px', background: 'var(--bg-secondary)', color: 'var(--text-primary)',
     fontSize: '14px', outline: 'none',
   });
   const labelStyle = { fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' };
@@ -158,10 +158,10 @@
       {loadingUsers ? (
         <window.Skeleton rows={5} type="row" />
       ) : (
-        <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '12px', overflowX: 'auto' }}>
+        <div style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '12px', overflowX: 'auto', boxShadow: '0 1px 4px rgba(18,32,57,0.08)' }}>
           <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: 'var(--bg-secondary)', height: '44px' }}>
+              <tr style={{ background: 'var(--surface-muted)', height: '44px' }}>
                 <th style={thStyle}>显示名称</th>
                 <th style={thStyle}>用户名</th>
                 <th style={thStyle}>邮箱</th>
@@ -174,16 +174,16 @@
               {pageData.length === 0 ? (
                 <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', height: '80px', color: 'var(--text-secondary)' }}>暂无用户</td></tr>
               ) : pageData.map(user => (
-                <tr key={user.id} style={{ height: '52px', borderTop: '1px solid var(--border)' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                <tr key={user.id} style={{ height: '52px', borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)', transition: 'background 150ms ease' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in srgb, var(--brand) 10%, var(--bg-secondary))'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; }}>
                   <td style={tdStyle}>{user.displayName}</td>
                   <td style={{ ...tdStyle, color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: '13px' }}>{user.username}</td>
                   <td style={{ ...tdStyle, color: 'var(--text-secondary)', fontSize: '13px' }}>{user.email}</td>
                   <td style={tdStyle}>
                     <span style={{
                       fontSize: '12px', padding: '2px 8px', borderRadius: '4px',
-                      background: user.role === 'admin' ? 'rgba(0,113,227,0.10)' : 'var(--bg-tertiary)',
+                      background: user.role === 'admin' ? 'color-mix(in srgb, var(--brand) 10%, transparent)' : 'var(--bg-tertiary)',
                       color: user.role === 'admin' ? 'var(--brand)' : 'var(--text-secondary)',
                       fontWeight: user.role === 'admin' ? 600 : 400,
                     }}>

@@ -12,7 +12,7 @@ function AuthLayout({ children }) {
       style={{
         minHeight: '100vh',
         background:
-          'radial-gradient(circle at top left, color-mix(in srgb, var(--brand-soft) 72%, transparent), transparent 42%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--surface-tint) 52%, transparent), transparent 48%), linear-gradient(180deg, color-mix(in srgb, var(--surface-tint) 22%, var(--bg-primary)), var(--bg-primary) 260px)',
+          'linear-gradient(180deg, color-mix(in srgb, var(--surface-tint) 34%, var(--bg-primary)) 0%, var(--bg-primary) 260px), var(--bg-primary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -27,8 +27,8 @@ function AuthLayout({ children }) {
           position: 'absolute',
           inset: 0,
           backgroundImage: 'linear-gradient(color-mix(in srgb, var(--border) 28%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--border) 28%, transparent) 1px, transparent 1px)',
-          backgroundSize: '44px 44px',
-          opacity: 0.28,
+          backgroundSize: '56px 56px',
+          opacity: 0.16,
           pointerEvents: 'none',
         }}
       />
@@ -63,7 +63,7 @@ function AuthLayout({ children }) {
               borderRadius: '999px',
               border: '1px solid color-mix(in srgb, var(--outline-strong) 84%, var(--border))',
               background: 'color-mix(in srgb, var(--surface-elevated) 84%, var(--surface-muted))',
-              boxShadow: 'var(--shadow-card)',
+              boxShadow: 'var(--shadow-control)',
             }}
           >
             <div

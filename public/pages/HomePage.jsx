@@ -216,17 +216,17 @@ function HomePage({ pageType = 'overview' } = {}) {
     : `${totalResourceCount} 个公开资源，覆盖 ${visibleCategoryCount} 个分类`;
   const metricCards = currentUser
     ? [
-        { key: 'total', label: '可见资源', value: totalResourceCount, note: '当前可访问', accent: 'var(--brand)' },
-        { key: 'categories', label: '资源分类', value: visibleCategoryCount, note: '入口索引', accent: 'var(--success)' },
-        { key: 'mine', label: '我的资源', value: mineResourceCount, note: '创建与维护', accent: 'var(--brand-strong)' },
+        { key: 'total', label: '可见资源', value: totalResourceCount, note: '当前可访问入口', accent: 'var(--brand)' },
+        { key: 'categories', label: '资源分类', value: visibleCategoryCount, note: '按主题浏览入口', accent: 'var(--success)' },
+        { key: 'mine', label: '我的资源', value: mineResourceCount, note: '我创建与维护的内容', accent: 'var(--brand-strong)' },
       ]
     : [
-        { key: 'public', label: '公开资源', value: totalResourceCount, note: '游客可访问', accent: 'var(--brand)' },
-        { key: 'categories', label: '资源分类', value: visibleCategoryCount, note: '按主题浏览', accent: 'var(--success)' },
-        { key: 'tags', label: '常用标签', value: visibleTagCount, note: '补充过滤', accent: 'var(--brand-strong)' },
+        { key: 'public', label: '公开资源', value: totalResourceCount, note: '无需登录即可访问', accent: 'var(--brand)' },
+        { key: 'categories', label: '资源分类', value: visibleCategoryCount, note: '按主题浏览入口', accent: 'var(--success)' },
+        { key: 'tags', label: '常用标签', value: visibleTagCount, note: '作为补充过滤条件', accent: 'var(--brand-strong)' },
       ];
   const trafficCards = [
-    { key: 'visits-total', label: '总访问量', value: trafficMetrics.totalVisits, note: '资源累计热度', accent: 'var(--brand)' },
+    { key: 'visits-total', label: '总访问量', value: trafficMetrics.totalVisits, note: '页面累计访问量', accent: 'var(--brand)' },
     { key: 'visits-month', label: '近30日访问', value: trafficMetrics.monthlyVisits, note: '近 30 天记录', accent: 'var(--success)' },
     { key: 'visits-day', label: '近24小时访问', value: trafficMetrics.dailyVisits, note: '最近一天活跃', accent: 'var(--brand-strong)' },
   ];
@@ -249,22 +249,52 @@ function HomePage({ pageType = 'overview' } = {}) {
     () => [...resources].sort((a, b) => (b.visitCount || 0) - (a.visitCount || 0)).slice(0, 4),
     [resources]
   );
-  const overviewRecentResources = React.useMemo(
-    () => [...resources].sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0)).slice(0, 4),
-    [resources]
-  );
+  const overviewRecentResources = React.useMemo(() => {
+    const popularIds = new Set(overviewPopularResources.map((resource) => resource.id));
+    return [...resources]
+      .filter((resource) => !popularIds.has(resource.id))
+      .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
+      .slice(0, 4);
+  }, [resources, overviewPopularResources]);
   const overviewQuickAccessEntries = currentUser
     ? [
-        { key: 'favorites', label: '我的收藏', count: favorites.length, note: '快速回到常用资源', emptyNote: '还没有收藏资源', filter: 'favorites', accent: 'var(--brand)', Icon: Heart },
-        { key: 'history', label: '最近访问', count: history.length, note: '继续上次浏览路径', emptyNote: '还没有访问记录', filter: 'history', accent: 'var(--success)', Icon: Clock },
-        { key: 'mine', label: '我创建的', count: mine.length, note: '维护自己的内容', emptyNote: '还没有创建内容', filter: 'mine', accent: 'var(--brand-strong)', Icon: FileText },
+        {
+          key: 'favorites',
+          label: '我的收藏',
+          count: favorites.length,
+          note: '快速回到常用资源',
+          emptyNote: '还没有收藏资源，先去逛逛并添加常用入口',
+          filter: 'favorites',
+          accent: 'var(--brand)',
+          Icon: Heart,
+        },
+        {
+          key: 'history',
+          label: '最近访问',
+          count: history.length,
+          note: '继续上次浏览路径',
+          emptyNote: '还没有访问记录，先随便逛一逛',
+          filter: 'history',
+          accent: 'var(--success)',
+          Icon: Clock,
+        },
+        {
+          key: 'mine',
+          label: '我创建的',
+          count: mine.length,
+          note: '维护自己的内容',
+          emptyNote: '还没有创建内容，可以尝试新增一个资源',
+          filter: 'mine',
+          accent: 'var(--brand-strong)',
+          Icon: FileText,
+        },
       ]
     : [];
   const overviewSections = [
     { key: 'popular', title: '热门资源', description: '按访问热度挑选常用入口。', resources: overviewPopularResources, actionLabel: '查看更多', action: () => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/resources'); } },
     { key: 'recent', title: '最近更新', description: '快速查看最近维护或新增的内容。', resources: overviewRecentResources, actionLabel: '查看更多', action: () => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/resources'); } },
     ...(currentUser && mine.length > 0
-      ? [{ key: 'mine', title: '我的资源', description: '继续维护你创建和拥有的资源。', resources: mine.slice(0, 4), actionLabel: '查看全部', action: () => dispatch({ type: 'SET_QUICK_ACCESS_FILTER', filter: 'mine' }) }]
+      ? [{ key: 'mine', title: '我的资源', description: '继续维护你创建和拥有的资源。', resources: mine.slice(0, 4), actionLabel: '查看更多', action: () => dispatch({ type: 'SET_QUICK_ACCESS_FILTER', filter: 'mine' }) }]
       : []),
   ].filter((section) => section.resources.length > 0);
   React.useEffect(() => {
@@ -755,14 +785,17 @@ function HomePage({ pageType = 'overview' } = {}) {
             position: 'relative',
             display: 'grid',
             gap: isMobile ? '10px' : '12px',
-            paddingTop: isOverviewMode ? (isMobile ? '8px' : '12px') : resultsTopPadding,
-            paddingBottom: isOverviewMode ? '8px' : 0,
-            borderRadius: isOverviewMode ? '20px' : 0,
-            background: isOverviewMode
-              ? (isLightTheme
-                ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 97%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted)) 100%)'
-                : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 91%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)')
-              : 'transparent',
+            ...(isOverviewMode
+              ? { maxWidth: '1280px', marginLeft: 'auto', marginRight: 'auto' }
+              : {}),
+            width: '100%',
+            paddingLeft: 0,
+            paddingRight: 0,
+            paddingTop: isOverviewMode ? '25px' : resultsTopPadding,
+            paddingBottom: isOverviewMode ? '20px' : 40,
+            borderRadius: 0,
+            border: 'none',
+            background: 'transparent',
           }}
         >
           {isOverviewMode ? (
@@ -1297,11 +1330,14 @@ function HomeOverview({
       <div
         data-rh-home-hero
         style={{
+          ...heroSurfaceStyle,
           display: 'grid',
           gap: heroPanelGap,
-          padding: heroPanelPadding,
-          borderRadius: '20px',
-          ...heroSurfaceStyle,
+          padding: 0,
+          borderRadius: 0,
+          border: 'none',
+          background: 'transparent',
+          boxShadow: 'none',
         }}
       >
         <div
@@ -1353,9 +1389,11 @@ function HomeOverview({
             width: '100%',
           }}
         >
-          {metrics.map((card) => {
+          {metrics.map((card, index) => {
             const isZeroMetric = Number(card.value) === 0;
             const displayValue = isZeroMetric ? '暂无数据' : card.value;
+            const dotColors = (window.helpers && window.helpers.COLOR_POOL) || ['#5856D6', '#FF9500', '#34C759', '#FF3B30', '#0071E3', '#FF2D55', '#AF52DE', '#00C7BE'];
+            const dotAccent = dotColors[index % dotColors.length];
 
             return (
               <div
@@ -1377,12 +1415,14 @@ function HomeOverview({
                       ? 'color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted))'
                       : 'color-mix(in srgb, var(--surface-elevated) 82%, var(--bg-primary))')
                     : (isLightTheme
-                      ? `linear-gradient(180deg, color-mix(in srgb, ${card.accent} 10%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--control-bg-muted)) 100%)`
-                      : `linear-gradient(180deg, color-mix(in srgb, ${card.accent} 16%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)`),
+                      ? 'var(--surface-elevated)'
+                      : 'var(--surface-elevated)'),
                   color: 'var(--text-primary)',
                   boxShadow: isZeroMetric
                     ? 'none'
-                    : `inset 0 1px 0 color-mix(in srgb, ${card.accent} 14%, transparent)`,
+                    : (isLightTheme
+                      ? '0 1px 3px color-mix(in srgb, var(--text-primary) 6%, transparent)'
+                      : '0 1px 3px color-mix(in srgb, var(--bg-primary) 24%, transparent)'),
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
@@ -1403,11 +1443,11 @@ function HomeOverview({
                       height: '8px',
                       borderRadius: '999px',
                       background: isZeroMetric
-                        ? `color-mix(in srgb, ${card.accent} 58%, transparent)`
-                        : card.accent,
+                        ? `color-mix(in srgb, ${dotAccent} 58%, transparent)`
+                        : dotAccent,
                       boxShadow: isZeroMetric
-                        ? `0 0 0 3px color-mix(in srgb, ${card.accent} 8%, transparent)`
-                        : `0 0 0 4px color-mix(in srgb, ${card.accent} 10%, transparent)`,
+                        ? `0 0 0 3px color-mix(in srgb, ${dotAccent} 8%, transparent)`
+                        : `0 0 0 4px color-mix(in srgb, ${dotAccent} 10%, transparent)`,
                       flexShrink: 0,
                     }}
                   />
@@ -1440,9 +1480,6 @@ function HomeOverview({
             );
           })}
         </div>
-        <div style={{ fontSize: '11px', lineHeight: 1.45, color: 'var(--text-secondary)', maxWidth: stackActions ? '100%' : '760px' }}>
-          从分类入口、热门资源或最近更新开始浏览。
-        </div>
       </div>
 
       {currentUser && quickAccessEntries.length > 0 && (
@@ -1458,6 +1495,7 @@ function HomeOverview({
               return (
                 <button
                   key={entry.key}
+                  aria-label={entry.label}
                   type="button"
                   data-rh-overview-quick-access={entry.key}
                   data-rh-overview-quick-access-empty={isEmptyEntry ? 'true' : 'false'}
@@ -1479,8 +1517,8 @@ function HomeOverview({
                     background: isEmptyEntry
                       ? quickAccessEmptySurfaceStyle.background
                       : (isLightTheme
-                        ? `linear-gradient(180deg, color-mix(in srgb, ${entry.accent || 'var(--brand)'} ${hoveredQuickAccessKey === entry.key ? 14 : 8}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 95%, var(--control-bg-muted)) 100%)`
-                        : `linear-gradient(180deg, color-mix(in srgb, ${entry.accent || 'var(--brand)'} ${hoveredQuickAccessKey === entry.key ? 20 : 12}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)`),
+                        ? 'var(--surface-elevated)'
+                        : 'var(--surface-elevated)'),
                     display: 'grid',
                     gap: '6px',
                     textAlign: 'left',
@@ -1545,6 +1583,7 @@ function HomeOverview({
               key={category.id}
               type="button"
               data-rh-overview-category-card={String(category.id)}
+              aria-label={category.name}
               onMouseEnter={() => setHoveredCategoryId(category.id)}
               onMouseLeave={() => setHoveredCategoryId(null)}
               onClick={() => onSelectCategory(category.id)}
@@ -1984,6 +2023,7 @@ function HomeSidebarNav({
                       flexShrink: 0,
                     }}
                   />
+                  <span style={{ width: 15, height: 15, flexShrink: 0, display: 'inline-block' }} aria-hidden="true" />
                   <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>全部资源</span>
                 </span>
               </button>

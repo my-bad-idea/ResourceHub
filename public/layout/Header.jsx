@@ -105,6 +105,12 @@ function Header({ variant = 'default', showSearch = true }) {
         type="text"
         value={searchQuery || ''}
         onChange={(e) => dispatch({ type: 'SET_SEARCH', query: e.target.value })}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            navigate('#/resources');
+          }
+        }}
         placeholder={isMobile ? '搜索资源...' : '搜索资源名称、描述、标签... (Ctrl+K)'}
         style={{
           width: '100%',
@@ -337,7 +343,7 @@ function Header({ variant = 'default', showSearch = true }) {
 
               {currentUser.role === 'admin' && (
                 <button
-                  onClick={() => { navigate('#/admin'); setShowUserMenu(false); }}
+                  onClick={() => { navigate('#/admin/categories'); setShowUserMenu(false); }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',

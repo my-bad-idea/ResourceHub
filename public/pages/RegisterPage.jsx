@@ -47,7 +47,7 @@ function RegisterPage() {
   const inputStyle = (field) => ({
     width: '100%', padding: '9px 12px',
     border: `1px solid ${errors[field] ? 'var(--danger)' : 'var(--border)'}`,
-    borderRadius: '8px', background: 'var(--bg-primary)',
+    borderRadius: '8px', background: 'var(--bg-secondary)',
     color: 'var(--text-primary)', fontSize: '14px',
     outline: 'none', boxSizing: 'border-box',
   });
@@ -100,6 +100,7 @@ function RegisterPage() {
               <div key={key} style={{ marginBottom: '14px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>{label}</label>
                 <input
+                  className="rh-auth-input"
                   type={type} name={key} value={form[key]} placeholder={placeholder}
                   autoComplete={autoComplete}
                   onChange={(e) => setForm(f => ({ ...f, [key]: e.target.value }))}

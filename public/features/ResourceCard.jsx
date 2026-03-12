@@ -318,7 +318,7 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
               </span>
             </div>
 
-            {hasDescription ? (
+            {(hasDescription || (featured && domain)) ? (
               <div
                 style={{
                   fontSize: resultCompact ? '10px' : featuredCompact ? '10px' : '11px',
@@ -331,7 +331,7 @@ function ResourceCard({ resource, onEdit, featured = false, compact = false }) {
                   minHeight: featured ? (featuredCompact ? '26px' : '34px') : resultCompact ? '14px' : '26px',
                 }}
               >
-                {resource.description}
+                {hasDescription ? resource.description : domain || '暂无描述'}
               </div>
             ) : null}
           </div>

@@ -1,4 +1,4 @@
-﻿function AdminConfig() {
+function AdminConfig() {
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
   const { Save, Loader } = lucide;
@@ -83,7 +83,9 @@
     width: '100%', padding: '9px 12px', boxSizing: 'border-box',
     border: `1px solid ${errors[field] ? 'var(--danger)' : 'var(--border)'}`,
     borderRadius: '8px',
-    background: 'var(--bg-primary)', color: 'var(--text-primary)',
+    background: 'var(--bg-secondary)',
+    backgroundColor: 'var(--bg-secondary)',
+    color: 'var(--text-primary)',
     fontSize: '14px', outline: 'none',
   });
   const labelStyle = { fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' };
@@ -113,25 +115,25 @@
         </button>
       </div>
 
-      <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', maxWidth: '640px' }}>
+      <div style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', maxWidth: '640px' }}>
         <div style={fieldStyle}>
           <label style={labelStyle}>站点标题</label>
           <input value={form.siteTitle} onChange={e => setForm(f => ({ ...f, siteTitle: e.target.value }))}
-            style={inputStyle('siteTitle')} placeholder="资源导航系统" disabled={saving} />
+            className="rh-admin-input" style={inputStyle('siteTitle')} placeholder="资源导航系统" disabled={saving} />
           {errors.siteTitle && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.siteTitle}</div>}
         </div>
 
         <div style={fieldStyle}>
           <label style={labelStyle}>站点副标题</label>
           <input value={form.siteSubtitle} onChange={e => setForm(f => ({ ...f, siteSubtitle: e.target.value }))}
-            style={inputStyle('siteSubtitle')} placeholder="企业内部资源导航" disabled={saving} />
+            className="rh-admin-input" style={inputStyle('siteSubtitle')} placeholder="企业内部资源导航" disabled={saving} />
           {errors.siteSubtitle && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.siteSubtitle}</div>}
         </div>
 
         <div style={fieldStyle}>
           <label style={labelStyle}>站点 Logo URL</label>
           <input value={form.logoUrl} onChange={e => setForm(f => ({ ...f, logoUrl: e.target.value }))}
-            style={inputStyle('logoUrl')} placeholder="留空则使用默认图标" disabled={saving} />
+            className="rh-admin-input" style={inputStyle('logoUrl')} placeholder="留空则使用默认图标" disabled={saving} />
           {errors.logoUrl && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.logoUrl}</div>}
           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>留空时显示品牌色首字母图标</div>
         </div>
@@ -141,14 +143,14 @@
             <label style={labelStyle}>Token 有效期（分钟）</label>
             <input type="number" value={form.tokenExpiry} min={5} max={43200}
               onChange={e => setForm(f => ({ ...f, tokenExpiry: e.target.value }))}
-              style={inputStyle('tokenExpiry')} placeholder="60" disabled={saving} />
+              className="rh-admin-input" style={inputStyle('tokenExpiry')} placeholder="60" disabled={saving} />
             {errors.tokenExpiry && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.tokenExpiry}</div>}
           </div>
           <div>
             <label style={labelStyle}>重置链接有效期（分钟）</label>
             <input type="number" value={form.resetTokenExpiry} min={5} max={43200}
               onChange={e => setForm(f => ({ ...f, resetTokenExpiry: e.target.value }))}
-              style={inputStyle('resetTokenExpiry')} placeholder="60" disabled={saving} />
+              className="rh-admin-input" style={inputStyle('resetTokenExpiry')} placeholder="60" disabled={saving} />
             {errors.resetTokenExpiry && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.resetTokenExpiry}</div>}
           </div>
         </div>
@@ -203,7 +205,7 @@
           <label style={labelStyle}>邮箱域名白名单</label>
           <input value={form.emailDomainWhitelist}
             onChange={e => setForm(f => ({ ...f, emailDomainWhitelist: e.target.value }))}
-            style={inputStyle('emailDomainWhitelist')} placeholder="example.com,corp.com" disabled={saving || !form.restrictEmailDomain} />
+            className="rh-admin-input" style={inputStyle('emailDomainWhitelist')} placeholder="example.com,corp.com" disabled={saving || !form.restrictEmailDomain} />
           {errors.emailDomainWhitelist && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.emailDomainWhitelist}</div>}
           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>多个域名用英文逗号分隔，留空则不限制</div>
         </div>

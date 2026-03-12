@@ -121,9 +121,35 @@
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent);
     }
 
+    /* Button focus for accessibility (e.g. 注册账号 / 忘记密码) */
+    button:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+
     input::placeholder, textarea::placeholder {
       color: color-mix(in srgb, var(--text-secondary) 84%, transparent);
       opacity: 1;
+    }
+
+    /* 覆盖浏览器 autofill 背景，使后台表单输入框与编辑类别等弹窗输入框视觉一致 */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 30px var(--bg-secondary) inset !important;
+      box-shadow: 0 0 0 30px var(--bg-secondary) inset !important;
+    }
+
+    /* 后台系统配置、邮件服务等表单输入框强制白底，与编辑类别弹窗一致 */
+    .rh-admin-input {
+      background: var(--bg-secondary) !important;
+      background-color: var(--bg-secondary) !important;
+    }
+
+    /* 登录/注册/忘记密码/设置向导等认证页输入框强制白底 */
+    .rh-auth-input {
+      background: var(--bg-secondary) !important;
+      background-color: var(--bg-secondary) !important;
     }
   </style>
 </head>

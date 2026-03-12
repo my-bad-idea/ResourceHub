@@ -49,6 +49,7 @@ function ForgotPasswordPage() {
             <div style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>邮箱</label>
               <input
+                className="rh-auth-input"
                 type="email" value={email} placeholder="your@example.com"
                 name="email"
                 autoComplete="email"
@@ -58,7 +59,7 @@ function ForgotPasswordPage() {
                 style={{
                   width: '100%', padding: '9px 12px',
                   border: `1px solid ${emailError ? 'var(--danger)' : 'var(--border)'}`,
-                  borderRadius: '8px', background: 'var(--bg-primary)',
+                  borderRadius: '8px', background: 'var(--bg-secondary)',
                   color: 'var(--text-primary)', fontSize: '14px',
                   outline: 'none', boxSizing: 'border-box',
                 }}

@@ -113,6 +113,7 @@ function ResetPasswordPage() {
               <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>新密码</label>
               <div style={{ position: 'relative' }}>
                 <input
+                  className="rh-auth-input"
                   type={showPw ? 'text' : 'password'} name="new-password" value={form.password}
                   autoComplete="new-password"
                   placeholder="至少8位，含字母和数字"
@@ -132,6 +133,7 @@ function ResetPasswordPage() {
               <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>确认新密码</label>
               <div style={{ position: 'relative' }}>
                 <input
+                  className="rh-auth-input"
                   type={showCPw ? 'text' : 'password'} name="confirm-password" value={form.confirmPassword}
                   autoComplete="new-password"
                   placeholder="再次输入新密码"
