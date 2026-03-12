@@ -148,8 +148,9 @@ function App() {
     if (!isAdmin) return null;
     return <window.AdminPage />;
   }
+  if (path === '/resources') return <window.HomePage pageType="results" />;
 
-  return <window.HomePage />;
+  return <window.HomePage pageType="overview" />;
 }
 
 // Mount React root

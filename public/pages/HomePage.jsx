@@ -1,9 +1,10 @@
 
-function HomePage() {
+function HomePage({ pageType = 'overview' } = {}) {
   const state = window.useAppState();
   const dispatch = window.useAppDispatch();
   const { request } = window.useApi();
   const viewportWidth = window.useViewportWidth();
+  const { navigate } = window.useRouter();
   const { LayoutGrid, List, Clock, Plus, ChevronDown, Heart, FileText, Menu, ArrowLeft, X } = lucide;
 
   const [showResourceModal, setShowResourceModal] = React.useState(false);
@@ -12,7 +13,6 @@ function HomePage() {
   const [showSortMenu, setShowSortMenu] = React.useState(false);
   const [highlightedSort, setHighlightedSort] = React.useState('hot');
   const [showAllSidebarTags, setShowAllSidebarTags] = React.useState(false);
-  const [browseAllMode, setBrowseAllMode] = React.useState(false);
   const [trafficMetrics, setTrafficMetrics] = React.useState({
     totalVisits: 0,
     monthlyVisits: 0,
@@ -207,7 +207,7 @@ function HomePage() {
     return [...selectedFirst, ...remaining.slice(0, 4)];
   }, [mergedOrderedTags, selectedTagsList, showAllSidebarTags]);
   const hiddenSidebarTagCount = Math.max(mergedOrderedTags.length - visibleSidebarTags.length, 0);
-  const isOverviewMode = !hasFilters && !browseAllMode;
+  const isOverviewMode = pageType !== 'results';
   const isResultsMode = !isOverviewMode;
   const visibleCategoryCount = resolvedCategories.length;
   const visibleTagCount = orderedTags.length;
@@ -261,8 +261,8 @@ function HomePage() {
       ]
     : [];
   const overviewSections = [
-    { key: 'popular', title: '热门资源', description: '按访问热度挑选常用入口。', resources: overviewPopularResources, actionLabel: '查看更多', action: () => setBrowseAllMode(true) },
-    { key: 'recent', title: '最近更新', description: '快速查看最近维护或新增的内容。', resources: overviewRecentResources, actionLabel: '查看更多', action: () => setBrowseAllMode(true) },
+    { key: 'popular', title: '热门资源', description: '按访问热度挑选常用入口。', resources: overviewPopularResources, actionLabel: '查看更多', action: () => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/resources'); } },
+    { key: 'recent', title: '最近更新', description: '快速查看最近维护或新增的内容。', resources: overviewRecentResources, actionLabel: '查看更多', action: () => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/resources'); } },
     ...(currentUser && mine.length > 0
       ? [{ key: 'mine', title: '我的资源', description: '继续维护你创建和拥有的资源。', resources: mine.slice(0, 4), actionLabel: '查看全部', action: () => dispatch({ type: 'SET_QUICK_ACCESS_FILTER', filter: 'mine' }) }]
       : []),
@@ -751,6 +751,13 @@ function HomePage() {
             display: 'grid',
             gap: isMobile ? '10px' : '12px',
             paddingTop: isOverviewMode ? (isMobile ? '8px' : '12px') : resultsTopPadding,
+            paddingBottom: isOverviewMode ? '8px' : 0,
+            borderRadius: isOverviewMode ? '20px' : 0,
+            background: isOverviewMode
+              ? (isLightTheme
+                ? 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 97%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted)) 100%)'
+                : 'linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 91%, var(--surface-tint)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)')
+              : 'transparent',
           }}
         >
           {isOverviewMode ? (
@@ -767,17 +774,20 @@ function HomePage() {
               stackActions={viewportWidth < 720}
               inlineMetrics={viewportWidth >= 960}
               onBrowseAll={() => {
-                setBrowseAllMode(true);
+                dispatch({ type: 'CLEAR_FILTERS' });
                 setShowSortMenu(false);
+                navigate('#/resources');
               }}
               onCreate={currentUser ? openCreate : null}
               onSelectCategory={(categoryId) => {
-                setBrowseAllMode(false);
+                dispatch({ type: 'CLEAR_FILTERS' });
                 dispatch({ type: 'SET_CATEGORY', category: categoryId });
+                navigate('#/resources');
               }}
               onSelectQuickAccess={(filter) => {
-                setBrowseAllMode(false);
+                dispatch({ type: 'CLEAR_FILTERS' });
                 dispatch({ type: 'SET_QUICK_ACCESS_FILTER', filter });
+                navigate('#/resources');
               }}
             />
           ) : (
@@ -926,7 +936,7 @@ function HomePage() {
                       ) : (
                         <button
                           data-rh-home-overview-return
-                          onClick={() => setBrowseAllMode(false)}
+                          onClick={() => { dispatch({ type: 'CLEAR_FILTERS' }); navigate('#/'); }}
                           onMouseEnter={(event) => handleSummaryActionHover(event, true)}
                           onMouseLeave={(event) => handleSummaryActionHover(event, false)}
                           style={summaryActionButtonStyle(isMobile)}
@@ -1394,7 +1404,7 @@ function HomeOverview({
                         : card.accent,
                       boxShadow: isZeroMetric
                         ? `0 0 0 3px color-mix(in srgb, ${card.accent} 8%, transparent)`
-                        : `0 0 0 4px color-mix(in srgb, ${card.accent} 14%, transparent)`,
+                        : `0 0 0 4px color-mix(in srgb, ${card.accent} 10%, transparent)`,
                       flexShrink: 0,
                     }}
                   />
