@@ -1374,12 +1374,12 @@ function HomeOverview({
                       ? 'color-mix(in srgb, var(--surface-elevated) 94%, var(--control-bg-muted))'
                       : 'color-mix(in srgb, var(--surface-elevated) 82%, var(--bg-primary))')
                     : (isLightTheme
-                      ? `linear-gradient(180deg, color-mix(in srgb, ${card.accent} 6%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--control-bg-muted)) 100%)`
-                      : `linear-gradient(180deg, color-mix(in srgb, ${card.accent} 10%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)`),
+                      ? `linear-gradient(180deg, color-mix(in srgb, ${card.accent} 10%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--control-bg-muted)) 100%)`
+                      : `linear-gradient(180deg, color-mix(in srgb, ${card.accent} 16%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)`),
                   color: 'var(--text-primary)',
                   boxShadow: isZeroMetric
                     ? 'none'
-                    : `inset 0 1px 0 color-mix(in srgb, ${card.accent} 10%, transparent)`,
+                    : `inset 0 1px 0 color-mix(in srgb, ${card.accent} 14%, transparent)`,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
@@ -1476,8 +1476,8 @@ function HomeOverview({
                     background: isEmptyEntry
                       ? quickAccessEmptySurfaceStyle.background
                       : (isLightTheme
-                        ? `linear-gradient(180deg, color-mix(in srgb, ${entry.accent || 'var(--brand)'} ${hoveredQuickAccessKey === entry.key ? 10 : 6}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 95%, var(--control-bg-muted)) 100%)`
-                        : `linear-gradient(180deg, color-mix(in srgb, ${entry.accent || 'var(--brand)'} ${hoveredQuickAccessKey === entry.key ? 14 : 9}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)`),
+                        ? `linear-gradient(180deg, color-mix(in srgb, ${entry.accent || 'var(--brand)'} ${hoveredQuickAccessKey === entry.key ? 14 : 8}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 95%, var(--control-bg-muted)) 100%)`
+                        : `linear-gradient(180deg, color-mix(in srgb, ${entry.accent || 'var(--brand)'} ${hoveredQuickAccessKey === entry.key ? 20 : 12}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 86%, var(--bg-primary)) 100%)`),
                     display: 'grid',
                     gap: '6px',
                     textAlign: 'left',
@@ -1551,11 +1551,11 @@ function HomeOverview({
                 borderRadius: '16px',
                 ...surfaceStyle,
                 border: isLightTheme
-                  ? `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 26 : 16}%, var(--control-border))`
-                  : `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 30 : 18}%, var(--border))`,
+                  ? `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 34 : 18}%, var(--control-border))`
+                  : `1px solid color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 40 : 24}%, var(--border))`,
                 background: isLightTheme
-                  ? `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 10 : 6}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint)) 100%)`
-                  : `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 14 : 9}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 100%)`,
+                  ? `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 16 : 8}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-tint)) 100%)`
+                  : `linear-gradient(180deg, color-mix(in srgb, ${category.color || 'var(--brand)'} ${hoveredCategoryId === category.id ? 22 : 12}%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--surface-tint)) 100%)`,
                 display: 'grid',
                 gap: '8px',
                 textAlign: 'left',
