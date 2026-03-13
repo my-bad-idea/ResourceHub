@@ -1,6 +1,8 @@
 import { sqlite, db } from './index.js'
-import { categories, resources, resourceTags } from './schema.js'
+import { categories, resources, resourceTags, users, initialized } from './schema.js'
 import { v4 as uuidv4 } from 'uuid'
+import bcrypt from 'bcryptjs'
+import { eq } from 'drizzle-orm'
 
 export function runMigrations(): void {
   sqlite.exec(`
@@ -172,4 +174,29 @@ export function seedMockData(adminId: string): void {
       db.insert(resourceTags).values({ resourceId: id, tag }).run()
     }
   }
+}
+
+export async function seedDemoAdminAndData(): Promise<void> {
+  const anyUser = db.select().from(users).limit(1).all()
+  if (anyUser.length > 0) return
+
+  const initRow = db.select().from(initialized).where(eq(initialized.id, 'default')).get()
+  if (initRow?.done) return
+
+  const now = Math.floor(Date.now() / 1000)
+  const adminId = uuidv4()
+  const passwordHash = await bcrypt.hash('Abc12345', 10)
+
+  db.insert(users).values({
+    id: adminId,
+    username: 'admin',
+    displayName: 'admin',
+    email: 'zhanglibo610@gmail.com',
+    role: 'admin',
+    status: 'active',
+    passwordHash,
+    createdAt: now,
+  }).run()
+
+  seedMockData(adminId)
 }

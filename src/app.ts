@@ -4,7 +4,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
 import staticPlugin from '@fastify/static'
-import { runMigrations } from './db/migrate.js'
+import { runMigrations, seedDemoAdminAndData } from './db/migrate.js'
 import { ensureRsaKeyPair } from './services/rsa.js'
 import authPlugin from './plugins/auth.js'
 import adminPlugin from './plugins/admin.js'
@@ -22,6 +22,10 @@ const NODE_ENV = process.env.NODE_ENV ?? 'development'
 export async function buildApp() {
   runMigrations()
   ensureRsaKeyPair()
+
+  if (process.env.SEED_DEMO === '1') {
+    await seedDemoAdminAndData()
+  }
 
   const fastify = Fastify({
     logger: NODE_ENV === 'development' ? { level: 'info' } : false,

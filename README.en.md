@@ -14,6 +14,14 @@ ResourceHub is a general-purpose resource management product used to centrally o
 - **Admin Console**: Admins can manage categories, tags, users, system settings, and email configuration.
 - **Mock Email Mode**: When SMTP is not configured, emails are not actually sent. Instead, the API response includes an email preview for the frontend to display.
 
+### Default demo admin account
+
+- **Username**: `admin`
+- **Password**: `Abc12345`
+- **Display name**: `admin`
+- **Email**: `zhanglibo610@gmail.com`
+- **Note**: This account is only auto-created when `SEED_DEMO=1` and the database has no users and the system is not initialized; it is intended for demo environments.
+
 ### Tech Stack Overview
 
 - **Frontend**: React 18 (CDN UMD) + Babel Standalone + Tailwind CSS (CDN), hash router, no bundler.
@@ -65,9 +73,10 @@ npm start
 Key environment variables:
 
 - `PORT` (default `3000`)
-- `DB_PATH` (default `data/resource-hub.db`)
+- `DB_PATH` (default `data-resource-hub.db`)
 - `JWT_SECRET` (must be a secure random value)
 - `NODE_ENV` (`development` / `production`)
+- `SEED_DEMO` (optional, set to `1` to auto-create the default demo admin and mock data when the DB is empty and not initialized)
 
 ### Documentation Navigation
 
