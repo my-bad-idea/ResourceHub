@@ -1,3 +1,52 @@
+function PasswordField({ field, label, showKey, placeholder, autoComplete, value, showPassword, error, onChange, onToggleShow, onKeyDown, disabled }) {
+  return (
+    <div style={{ marginBottom: '14px' }}>
+      <label style={{
+        fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)',
+        display: 'block', marginBottom: '6px',
+      }}>
+        {label}
+      </label>
+      <div style={{ position: 'relative' }}>
+        <input
+          type={showPassword ? 'text' : 'password'}
+          name={field}
+          autoComplete={autoComplete}
+          value={value}
+          placeholder={placeholder}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          disabled={disabled}
+          style={{
+            width: '100%', padding: '8px 40px 8px 12px',
+            border: `1px solid ${error ? 'var(--danger)' : 'var(--border)'}`,
+            borderRadius: '8px', background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)', fontSize: '14px',
+            outline: 'none', boxSizing: 'border-box',
+          }}
+        />
+        <button
+          type="button"
+          onClick={onToggleShow}
+          style={{
+            position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text-secondary)', display: 'flex', alignItems: 'center',
+          }}
+        >
+          {showPassword ? <lucide.EyeOff size={16} /> : <lucide.Eye size={16} />}
+        </button>
+      </div>
+      {field === 'newPassword' && (
+        <window.PasswordStrength password={value} />
+      )}
+      {error && (
+        <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{error}</div>
+      )}
+    </div>
+  );
+}
+
 function ChangePasswordModal({ isOpen, onClose }) {
   const state = window.useAppState();
   const dispatch = window.useAppDispatch();
@@ -72,52 +121,9 @@ function ChangePasswordModal({ isOpen, onClose }) {
     }
   };
 
-  const PasswordField = ({ field, label, showKey, placeholder, autoComplete }) => (
-    <div style={{ marginBottom: '14px' }}>
-      <label style={{
-        fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)',
-        display: 'block', marginBottom: '6px',
-      }}>
-        {label}
-      </label>
-      <div style={{ position: 'relative' }}>
-        <input
-          type={showFields[showKey] ? 'text' : 'password'}
-          name={field}
-          autoComplete={autoComplete}
-          value={form[field]}
-          placeholder={placeholder}
-          onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
-          onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
-          disabled={loading}
-          style={{
-            width: '100%', padding: '8px 40px 8px 12px',
-            border: `1px solid ${errors[field] ? 'var(--danger)' : 'var(--border)'}`,
-            borderRadius: '8px', background: 'var(--bg-secondary)',
-            color: 'var(--text-primary)', fontSize: '14px',
-            outline: 'none', boxSizing: 'border-box',
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => setShowFields(s => ({ ...s, [showKey]: !s[showKey] }))}
-          style={{
-            position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--text-secondary)', display: 'flex', alignItems: 'center',
-          }}
-        >
-          {showFields[showKey] ? <lucide.EyeOff size={16} /> : <lucide.Eye size={16} />}
-        </button>
-      </div>
-      {field === 'newPassword' && (
-        <window.PasswordStrength password={form.newPassword} />
-      )}
-      {errors[field] && (
-        <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors[field]}</div>
-      )}
-    </div>
-  );
+  const handleFieldChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
+  const handleToggleShow = (showKey) => () => setShowFields(s => ({ ...s, [showKey]: !s[showKey] }));
+  const handleKeyDown = (e) => { if (e.key === 'Enter') handleSubmit(); };
 
   return (
     <window.Modal isOpen={isOpen} onClose={onClose} title="修改密码" width="440px" closeOnBackdrop={false} closeOnEscape>
@@ -143,6 +149,13 @@ function ChangePasswordModal({ isOpen, onClose }) {
           showKey="current"
           placeholder="请输入当前密码"
           autoComplete="current-password"
+          value={form.currentPassword}
+          showPassword={showFields.current}
+          error={errors.currentPassword}
+          onChange={handleFieldChange('currentPassword')}
+          onToggleShow={handleToggleShow('current')}
+          onKeyDown={handleKeyDown}
+          disabled={loading}
         />
         <PasswordField
           field="newPassword"
@@ -150,6 +163,13 @@ function ChangePasswordModal({ isOpen, onClose }) {
           showKey="new"
           placeholder="至少8位，含字母和数字"
           autoComplete="new-password"
+          value={form.newPassword}
+          showPassword={showFields.new}
+          error={errors.newPassword}
+          onChange={handleFieldChange('newPassword')}
+          onToggleShow={handleToggleShow('new')}
+          onKeyDown={handleKeyDown}
+          disabled={loading}
         />
         <PasswordField
           field="confirmPassword"
@@ -157,6 +177,13 @@ function ChangePasswordModal({ isOpen, onClose }) {
           showKey="confirm"
           placeholder="再次输入新密码"
           autoComplete="new-password"
+          value={form.confirmPassword}
+          showPassword={showFields.confirm}
+          error={errors.confirmPassword}
+          onChange={handleFieldChange('confirmPassword')}
+          onToggleShow={handleToggleShow('confirm')}
+          onKeyDown={handleKeyDown}
+          disabled={loading}
         />
 
         <div style={{

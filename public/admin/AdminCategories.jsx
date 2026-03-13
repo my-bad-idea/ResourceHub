@@ -256,7 +256,13 @@ function AdminCategories() {
       )}
 
       {/* Create/Edit Modal */}
-      <window.Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editTarget ? '编辑类别' : '新增类别'} width="480px">
+      <window.Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editTarget ? '编辑类别' : '新增类别'}
+        width="480px"
+        closeOnBackdrop={false}
+      >
         <div>
           <div style={{ marginBottom: '16px' }}>
             <label style={modalLabelStyle}>类别名称</label>

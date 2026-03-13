@@ -331,7 +331,13 @@ function AdminUsers() {
       )}
 
       {/* Create/Edit Modal */}
-      <window.Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editTarget ? '编辑用户' : '新增用户'} width="480px">
+      <window.Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editTarget ? '编辑用户' : '新增用户'}
+        width="480px"
+        closeOnBackdrop={false}
+      >
         <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
           {formErrors.general && (
             <div style={{ background: 'color-mix(in srgb, var(--danger) 8%, var(--surface-elevated))', border: '1px solid color-mix(in srgb, var(--danger) 22%, var(--control-border))', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: 'var(--danger)' }}>
@@ -419,8 +425,13 @@ function AdminUsers() {
       </window.Modal>
 
       {/* Reset Password Modal */}
-      <window.Modal isOpen={!!resetTarget} onClose={() => { setResetTarget(null); setResetError(''); }}
-        title={`重置密码 — ${resetTarget?.displayName || ''}`} width="400px">
+      <window.Modal
+        isOpen={!!resetTarget}
+        onClose={() => { setResetTarget(null); setResetError(''); }}
+        title={`重置密码 — ${resetTarget?.displayName || ''}`}
+        width="400px"
+        closeOnBackdrop={false}
+      >
         <div>
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
             系统将自动生成临时密码并发送至用户邮箱，用户可凭临时密码登录后自行修改。
