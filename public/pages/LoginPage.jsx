@@ -36,11 +36,20 @@ function LoginPage() {
     }));
   };
 
+  const formRef = React.useRef(null);
+
   const handleFieldBlur = (field) => {
     setErrors((prev) => ({
       ...prev,
       [field]: validateField(field, form[field]),
     }));
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      formRef.current?.requestSubmit();
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -88,7 +97,7 @@ function LoginPage() {
         subtitle={config.siteSubtitle || '统一管理与访问你的资源'}
         logoLetter={logoLetter}
       >
-          <form onSubmit={handleSubmit}>
+          <form ref={formRef} onSubmit={handleSubmit}>
             <div style={authStyles.field}>
               <label style={authStyles.label}>用户名</label>
               <input
@@ -101,6 +110,7 @@ function LoginPage() {
                 aria-invalid={!!errors.username}
                 onChange={(e) => updateField('username', e.target.value)}
                 onBlur={() => handleFieldBlur('username')}
+                onKeyDown={handleKeyDown}
                 placeholder="请输入用户名"
                 disabled={loading}
                 style={authStyles.input(!!errors.username)}
@@ -120,6 +130,7 @@ function LoginPage() {
                   aria-invalid={!!errors.password}
                   onChange={(e) => updateField('password', e.target.value)}
                   onBlur={() => handleFieldBlur('password')}
+                  onKeyDown={handleKeyDown}
                   placeholder="请输入密码"
                   disabled={loading}
                   style={authStyles.input(!!errors.password, true)}
