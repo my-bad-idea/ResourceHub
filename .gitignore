@@ -73,6 +73,8 @@ lib-cov
 # Project-specific
 # -----------------------------------------------------------------------------
 .claude
+.cursor
+.codex
 artifacts/
 **/CLAUDE.md
 **/AGENTS.md
@@ -103,5 +105,3 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .yarn-integrity
 lerna-debug.log*
-
-.cursor/

@@ -12,8 +12,11 @@
         "test:smoke": "node test/smoke.mjs",
         "test:browser": "node test/browser-acceptance.mjs",
         "check": "npm run build && npm run test:smoke",
+        "// release:patch": "补丁版本发布",
         "release:patch": "npm version patch && npm publish",
+        "// release:minor": "次版本发布",
         "release:minor": "npm version minor && npm publish",
+        "// release:major": "主版本发布",
         "release:major": "npm version major && npm publish"
     },
     "dependencies": {
