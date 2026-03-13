@@ -26,8 +26,9 @@ For detailed technical documentation, see `[docs/tech-stack.md](docs/tech-stack.
 ### Install & Run via npm
 
 ```bash
-npm i resource-hub
-npx resource-hub
+npm install -g @zhang_libo/resource-hub
+npx @zhang_libo/resource-hub
+npm uninstall -g @zhang_libo/resource-hub
 ```
 
 Default URL: `http://localhost:3000`. On first run, the app will redirect to `#/setup` to initialize the admin user. Runtime parameters can be set via environment variables (e.g. `PORT`, `DB_PATH`, `JWT_SECRET`, `NODE_ENV`); see "Install & Run from Source" below for details.

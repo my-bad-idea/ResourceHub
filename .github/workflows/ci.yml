@@ -30,6 +30,12 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Run smoke tests
+        run: npm run test:smoke
+
+      - name: Run browser acceptance tests
+        run: npm run test:browser
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
