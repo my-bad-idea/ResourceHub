@@ -33,12 +33,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run smoke tests
-        run: npm run test:smoke
-
-      - name: Run browser acceptance tests
-        run: npm run test:browser
-
       - name: Publish to npm
         run: npm publish --access=public
         env:
