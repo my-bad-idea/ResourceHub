@@ -199,4 +199,5 @@ export async function seedDemoAdminAndData(): Promise<void> {
   }).run()
 
   seedMockData(adminId)
+  db.update(initialized).set({ done: true }).where(eq(initialized.id, 'default')).run()
 }

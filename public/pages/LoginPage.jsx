@@ -64,6 +64,16 @@ function LoginPage() {
       } else {
         setErrors((prev) => ({ ...prev, form: '用户名或密码错误，请重新输入' }));
       }
+    } catch (err) {
+      console.error('[Login] Error:', err);
+      const msg = (err?.message || '').toLowerCase();
+      const isCryptoError = msg.includes('crypto') || msg.includes('forge') || msg.includes('importkey');
+      setErrors((prev) => ({
+        ...prev,
+        form: isCryptoError
+          ? '当前浏览器环境不支持安全加密，请使用 HTTPS 或 localhost 访问'
+          : '登录过程中发生错误，请稍后重试',
+      }));
     } finally {
       setLoading(false);
     }

@@ -41,7 +41,7 @@ function SetupPage() {
       });
       if (ok) {
         dispatch({ type: 'ADD_TOAST', toastType: 'success', message: '初始化成功！请登录' });
-        window.location.hash = '#/login';
+        history.replaceState(null, '', window.location.pathname + window.location.search + '#/login');
         window.location.reload();
       } else {
         if (data.code === 'VALIDATION_ERROR' && data.fields) {

@@ -1,13 +1,35 @@
 // RSA helpers for password encryption
+// Uses native crypto.subtle in secure contexts (HTTPS / localhost).
+// Falls back to node-forge (lazy-loaded) in plain HTTP contexts.
 (function () {
   const cache = {
     publicKeyPem: null,
     cryptoKey: null,
+    forgeKey: null,
     fetchedAt: 0,
   };
 
+  const hasNativeCrypto = !!(window.crypto && window.crypto.subtle);
+  let forgeLoadPromise = null;
+
   function nowSeconds() {
     return Math.floor(Date.now() / 1000);
+  }
+
+  function loadForge() {
+    if (window.forge) return Promise.resolve();
+    if (forgeLoadPromise) return forgeLoadPromise;
+    forgeLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = '/vendor/forge.min.js';
+      script.onload = () => resolve();
+      script.onerror = () => {
+        forgeLoadPromise = null;
+        reject(new Error('failed_to_load_forge'));
+      };
+      document.head.appendChild(script);
+    });
+    return forgeLoadPromise;
   }
 
   function pemToArrayBuffer(pem) {
@@ -24,8 +46,8 @@
     return buffer;
   }
 
-  async function fetchRsaPublicKey() {
-    if (cache.publicKeyPem && cache.cryptoKey) return cache.cryptoKey;
+  async function fetchPublicKeyPem() {
+    if (cache.publicKeyPem) return cache.publicKeyPem;
 
     const resp = await fetch('/api/auth/rsa-public-key');
     if (!resp.ok) throw new Error('failed_to_fetch_rsa_public_key');
@@ -33,19 +55,9 @@
     const pem = json?.data?.publicKey;
     if (!pem || typeof pem !== 'string') throw new Error('invalid_rsa_public_key');
 
-    const keyData = pemToArrayBuffer(pem);
-    const cryptoKey = await window.crypto.subtle.importKey(
-      'spki',
-      keyData,
-      { name: 'RSA-OAEP', hash: 'SHA-256' },
-      true,
-      ['encrypt'],
-    );
-
     cache.publicKeyPem = pem;
-    cache.cryptoKey = cryptoKey;
     cache.fetchedAt = nowSeconds();
-    return cryptoKey;
+    return pem;
   }
 
   function arrayBufferToBase64(buffer) {
@@ -57,32 +69,57 @@
     return btoa(binary);
   }
 
+  async function encryptNative(plain) {
+    const pem = await fetchPublicKeyPem();
+    if (!cache.cryptoKey) {
+      const keyData = pemToArrayBuffer(pem);
+      cache.cryptoKey = await window.crypto.subtle.importKey(
+        'spki',
+        keyData,
+        { name: 'RSA-OAEP', hash: 'SHA-256' },
+        true,
+        ['encrypt'],
+      );
+    }
+    const encrypted = await window.crypto.subtle.encrypt(
+      { name: 'RSA-OAEP' },
+      cache.cryptoKey,
+      new TextEncoder().encode(plain),
+    );
+    return arrayBufferToBase64(encrypted);
+  }
+
+  async function encryptWithForge(plain) {
+    await loadForge();
+    const pem = await fetchPublicKeyPem();
+    if (!cache.forgeKey) {
+      cache.forgeKey = window.forge.pki.publicKeyFromPem(pem);
+    }
+    const encrypted = cache.forgeKey.encrypt(
+      window.forge.util.encodeUtf8(plain),
+      'RSA-OAEP',
+      { md: window.forge.md.sha256.create(), mgf1: { md: window.forge.md.sha256.create() } },
+    );
+    return window.forge.util.encode64(encrypted);
+  }
+
   async function encryptPasswordWithTs(password) {
     if (!password) throw new Error('password_required');
     const ts = nowSeconds();
     const plain = `${password}:${ts}`;
-    const key = await fetchRsaPublicKey();
-
-    const encoder = new TextEncoder();
-    const data = encoder.encode(plain);
-    const encrypted = await window.crypto.subtle.encrypt(
-      { name: 'RSA-OAEP' },
-      key,
-      data,
-    );
-
-    const passwordEnc = arrayBufferToBase64(encrypted);
+    const passwordEnc = hasNativeCrypto
+      ? await encryptNative(plain)
+      : await encryptWithForge(plain);
     return { passwordEnc, ts };
   }
 
-  async function prepareEncryptedPasswordPayload(password) {
-    return encryptPasswordWithTs(password);
+  async function fetchRsaPublicKey() {
+    return fetchPublicKeyPem();
   }
 
   window.security = {
     fetchRsaPublicKey,
     encryptPasswordWithTs,
-    prepareEncryptedPasswordPayload,
+    prepareEncryptedPasswordPayload: encryptPasswordWithTs,
   };
 }());
-

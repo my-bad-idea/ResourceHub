@@ -56,6 +56,17 @@ function ChangePasswordModal({ isOpen, onClose }) {
         }
         dispatch({ type: 'ADD_TOAST', toastType: 'error', message: data.error || '修改失败' });
       }
+    } catch (err) {
+      console.error('[ChangePassword] Error:', err);
+      const msg = (err?.message || '').toLowerCase();
+      const isCryptoError = msg.includes('crypto') || msg.includes('forge') || msg.includes('importkey');
+      dispatch({
+        type: 'ADD_TOAST',
+        toastType: 'error',
+        message: isCryptoError
+          ? '当前浏览器环境不支持安全加密，请使用 HTTPS 或 localhost 访问'
+          : '操作过程中发生错误，请稍后重试',
+      });
     } finally {
       setLoading(false);
     }
