@@ -23,6 +23,15 @@ ResourceHub is a general-purpose resource management product used to centrally o
 
 For detailed technical documentation, see `[docs/tech-stack.md](docs/tech-stack.md)`.
 
+### Install & Run via npm
+
+```bash
+npm i resource-hub
+npx resource-hub
+```
+
+Default URL: `http://localhost:3000`. On first run, the app will redirect to `#/setup` to initialize the admin user. Runtime parameters can be set via environment variables (e.g. `PORT`, `DB_PATH`, `JWT_SECRET`, `NODE_ENV`); see "Install & Run from Source" below for details.
+
 ### Install & Run from Source
 
 - **Local Development**
@@ -58,16 +67,6 @@ Key environment variables:
 - `DB_PATH` (default `data/resource-hub.db`)
 - `JWT_SECRET` (must be a secure random value)
 - `NODE_ENV` (`development` / `production`)
-
-### Install & Run via npm Package (Reserved)
-
-In the future, if ResourceHub is published as an npm package, installation might look like:
-
-```bash
-npm install resourcehub
-```
-
-We will then provide a corresponding CLI / Node API entrypoint. The concrete usage will be added to this document once the npm package is officially released.
 
 ### Documentation Navigation
 
