@@ -1,6 +1,6 @@
 {
     "name": "resource-hub",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "description": "Resource Hub is a resource management system that allows you to manage your resources in a centralized way.",
     "keywords": [
         "resource",
