@@ -1,6 +1,14 @@
 {
     "name": "resource-hub",
-    "version": "2.0.0",
+    "version": "0.0.0",
+    "description": "Resource Hub is a resource management system that allows you to manage your resources in a centralized way.",
+    "keywords": [
+        "resource",
+        "management",
+        "system",
+        "hub",
+        "resource-hub"
+    ],
     "type": "module",
     "author": "Libo Zhang",
     "email": "zhanglibo610@gmail.com",
@@ -13,11 +21,11 @@
         "test:browser": "node test/browser-acceptance.mjs",
         "check": "npm run build && npm run test:smoke",
         "// release:patch": "补丁版本发布",
-        "release:patch": "npm version patch && npm publish",
+        "release:patch": "npm version patch && npm publish --access=public",
         "// release:minor": "次版本发布",
-        "release:minor": "npm version minor && npm publish",
+        "release:minor": "npm version minor && npm publish --access=public",
         "// release:major": "主版本发布",
-        "release:major": "npm version major && npm publish"
+        "release:major": "npm version major && npm publish --access=public"
     },
     "dependencies": {
         "@fastify/cors": "^9",
