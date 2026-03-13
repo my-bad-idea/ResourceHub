@@ -1,18 +1,41 @@
 {
     "name": "resource-hub",
     "version": "1.0.0",
-    "description": "Resource Hub is a resource management system that allows you to manage your resources in a centralized way.",
+    "description": "资源导航系统 - 集中整理与维护站点、工具、知识库与链接，支持用户登录、收藏、访问历史与后台管理",
     "keywords": [
         "resource",
         "management",
         "system",
         "hub",
-        "resource-hub"
+        "resource-hub",
+        "资源",
+        "导航",
+        "资源管理",
+        "链接管理",
+        "收藏",
+        "后台管理"
     ],
     "type": "module",
+    "license": "MIT",
     "author": "Libo Zhang",
     "email": "zhanglibo610@gmail.com",
-    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/my-bad-idea/ResourceHub.git"
+    },
+    "homepage": "https://github.com/my-bad-idea/ResourceHub#readme",
+    "main": "dist/app.js",
+    "bin": {
+        "resource-hub": "bin/cli.js"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "files": [
+        "dist",
+        "public",
+        "bin"
+    ],
     "scripts": {
         "dev": "tsx watch src/app.ts",
         "build": "tsc",
@@ -21,11 +44,11 @@
         "test:browser": "node test/browser-acceptance.mjs",
         "check": "npm run build && npm run test:smoke",
         "// release:patch": "补丁版本发布",
-        "release:patch": "npm version patch && npm publish --access=public",
+        "release:patch": "npm run build && npm version patch && npm publish --access=public",
         "// release:minor": "次版本发布",
-        "release:minor": "npm version minor && npm publish --access=public",
+        "release:minor": "npm run build && npm version minor && npm publish --access=public",
         "// release:major": "主版本发布",
-        "release:major": "npm version major && npm publish --access=public"
+        "release:major": "npm run build && npm version major && npm publish --access=public"
     },
     "dependencies": {
         "@fastify/cors": "^9",
