@@ -121,12 +121,12 @@ function AuthCard({ kicker, title, subtitle, logoLetter = 'R', width = '438px', 
   const isCompact = viewportWidth < 640;
 
   return (
-    <div style={{ width, maxWidth: '100%', position: 'relative' }}>
+    <div style={{ width: isCompact ? '100%' : width, maxWidth: '100%', position: 'relative' }}>
       <div
         aria-hidden="true"
         style={{
           position: 'absolute',
-          inset: isCompact ? '16px -10px -12px 10px' : '18px -16px -16px 16px',
+          inset: isCompact ? '16px 10px 0 10px' : '18px -16px -16px 16px',
           borderRadius: '30px',
           background: 'linear-gradient(180deg, color-mix(in srgb, var(--brand-soft) 56%, transparent) 0%, transparent 82%)',
           opacity: 0.9,
@@ -360,7 +360,7 @@ function AuthLayout({ children }) {
   );
 
   return (
-    <div
+      <div
       style={{
         minHeight: '100vh',
         background: `
@@ -370,28 +370,48 @@ function AuthLayout({ children }) {
           var(--bg-primary)
         `,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: isStacked ? 'flex-start' : 'center',
         justifyContent: 'center',
         padding: viewportWidth < 640 ? '20px 16px' : '32px 24px',
         position: 'relative',
-        overflow: 'hidden',
       }}
     >
       <div
         aria-hidden="true"
         style={{
-          position: 'absolute',
+          position: 'fixed',
           inset: 0,
-          backgroundImage: 'linear-gradient(color-mix(in srgb, var(--border) 24%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--border) 24%, transparent) 1px, transparent 1px)',
-          backgroundSize: '72px 72px',
-          opacity: 0.06,
+          overflow: 'hidden',
           pointerEvents: 'none',
+          zIndex: 0,
         }}
-      />
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'linear-gradient(color-mix(in srgb, var(--border) 24%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--border) 24%, transparent) 1px, transparent 1px)',
+            backgroundSize: '72px 72px',
+            opacity: 0.06,
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            width: isStacked ? '360px' : '540px',
+            height: isStacked ? '360px' : '540px',
+            right: isStacked ? '50%' : '8%',
+            top: isStacked ? '20%' : '48%',
+            transform: isStacked ? 'translate(50%, -50%)' : 'translateY(-50%)',
+            background: 'radial-gradient(circle, color-mix(in srgb, var(--brand-soft) 68%, transparent) 0%, transparent 68%)',
+            opacity: 0.95,
+          }}
+        />
+      </div>
       <div
         ref={languageMenuRef}
         style={{
-          position: 'absolute',
+          position: 'fixed',
           top: viewportWidth < 640 ? '14px' : '20px',
           right: viewportWidth < 640 ? '14px' : '20px',
           zIndex: 2,
@@ -462,21 +482,6 @@ function AuthLayout({ children }) {
           </div>
         )}
       </div>
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          width: isStacked ? '360px' : '540px',
-          height: isStacked ? '360px' : '540px',
-          right: isStacked ? '50%' : '8%',
-          top: isStacked ? '20%' : '48%',
-          transform: isStacked ? 'translate(50%, -50%)' : 'translateY(-50%)',
-          background: 'radial-gradient(circle, color-mix(in srgb, var(--brand-soft) 68%, transparent) 0%, transparent 68%)',
-          opacity: 0.95,
-          pointerEvents: 'none',
-        }}
-      />
-
       <div
         style={{
           width: '100%',
