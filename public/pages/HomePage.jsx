@@ -61,24 +61,44 @@ function HomePage({ pageType = 'overview' } = {}) {
   const { getCategoryTone } = window.helpers;
 
   const baseCardColumns = viewportWidth >= 1280 ? 4 : viewportWidth >= 960 ? 3 : viewportWidth >= 640 ? 2 : 1;
+  const deduplicatedHistory = React.useMemo(() => {
+    const seen = new Set();
+    return (history || []).filter(r => {
+      if (seen.has(r.id)) return false;
+      seen.add(r.id);
+      return true;
+    });
+  }, [history]);
+  const basePool = quickAccessFilter === 'favorites' ? favorites
+    : quickAccessFilter === 'history' ? deduplicatedHistory
+    : quickAccessFilter === 'mine' ? mine
+    : resources;
   const categoryCountMap = React.useMemo(() => {
+    const source = quickAccessFilter === 'favorites' ? favorites
+      : quickAccessFilter === 'history' ? deduplicatedHistory
+      : quickAccessFilter === 'mine' ? mine
+      : resources;
     const counts = {};
-    (resources || []).forEach((resource) => {
+    (source || []).forEach((resource) => {
       if (resource.categoryId === null || resource.categoryId === undefined) return;
       counts[resource.categoryId] = (counts[resource.categoryId] || 0) + 1;
     });
     return counts;
-  }, [resources]);
+  }, [resources, favorites, deduplicatedHistory, mine, quickAccessFilter]);
 
   const tagCountMap = React.useMemo(() => {
+    const source = quickAccessFilter === 'favorites' ? favorites
+      : quickAccessFilter === 'history' ? deduplicatedHistory
+      : quickAccessFilter === 'mine' ? mine
+      : resources;
     const counts = {};
-    (resources || []).forEach((resource) => {
+    (source || []).forEach((resource) => {
       (resource.tags || []).forEach((tag) => {
         counts[tag] = (counts[tag] || 0) + 1;
       });
     });
     return counts;
-  }, [resources]);
+  }, [resources, favorites, deduplicatedHistory, mine, quickAccessFilter]);
 
   const orderedTags = React.useMemo(() => {
     const source = Array.isArray(tags) && tags.length > 0 ? tags : Object.keys(tagCountMap);
@@ -117,13 +137,13 @@ function HomePage({ pageType = 'overview' } = {}) {
   }, [categories, resources, getCategoryTone]);
 
   const categoryList = React.useMemo(() => {
-    const totalCategory = { id: null, name: '全部', color: null, resourceCount: resources.length };
+    const totalCategory = { id: null, name: '全部', color: null, resourceCount: basePool.length };
     const categoriesWithCounts = resolvedCategories.map((category) => ({
       ...category,
       resourceCount: category.resourceCount ?? categoryCountMap[category.id] ?? 0,
     }));
     return [totalCategory, ...categoriesWithCounts];
-  }, [resolvedCategories, categoryCountMap, resources.length]);
+  }, [resolvedCategories, categoryCountMap, basePool.length]);
 
   const quickAccessItems = currentUser
     ? [
@@ -133,10 +153,7 @@ function HomePage({ pageType = 'overview' } = {}) {
       ]
     : [];
 
-  let pool = resources;
-  if (quickAccessFilter === 'favorites') pool = favorites;
-  else if (quickAccessFilter === 'history') pool = history;
-  else if (quickAccessFilter === 'mine') pool = mine;
+  let pool = basePool;
 
   if (selectedCategory !== null && selectedCategory !== undefined) {
     pool = pool.filter((resource) => resource.categoryId === selectedCategory);
@@ -293,7 +310,7 @@ function HomePage({ pageType = 'overview' } = {}) {
         {
           key: 'history',
           label: '最近访问',
-          count: history.length,
+          count: deduplicatedHistory.length,
           note: '继续上次浏览路径',
           emptyNote: '还没有访问记录，先随便逛一逛',
           filter: 'history',
@@ -412,9 +429,7 @@ function HomePage({ pageType = 'overview' } = {}) {
     ? `${resultsSummaryLabel} · 已应用 ${Math.max(activeFilterGroupCount, 1)} 组条件`
     : resultsSummaryLabel;
   const toolbarStickyDesktop = false;
-  const cardColumns = viewMode === 'card' && pool.length > 0 && pool.length <= baseCardColumns
-    ? pool.length
-    : baseCardColumns;
+  const cardColumns = baseCardColumns;
   const compactResultsGrid = isDesktop && viewMode === 'card' && cardColumns < baseCardColumns;
   const filteredGridMaxWidth = compactResultsGrid
     ? `${cardColumns * 350 + Math.max(cardColumns - 1, 0) * 14}px`
