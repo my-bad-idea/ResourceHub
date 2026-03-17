@@ -1,6 +1,6 @@
 {
     "name": "@zhang_libo/resource-hub",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "资源导航系统 - 集中整理与维护站点、工具、知识库与链接，支持用户登录、收藏、访问历史与后台管理",
     "keywords": [
         "resource",
