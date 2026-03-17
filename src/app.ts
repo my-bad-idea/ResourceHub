@@ -38,10 +38,29 @@ export async function buildApp() {
 
   await fastify.register(jwt, { secret: JWT_SECRET })
 
-  await fastify.register(staticPlugin, {
-    root: join(process.cwd(), 'public'),
-    prefix: '/',
-  })
+  if (NODE_ENV === 'production') {
+    await fastify.register(staticPlugin, {
+      root: join(process.cwd(), 'dist', 'client'),
+      prefix: '/',
+      maxAge: 31536000000,
+      immutable: true,
+      lastModified: true,
+      etag: true,
+    })
+
+    fastify.addHook('onSend', (request, reply, payload, done) => {
+      if (request.url === '/' || request.url === '/index.html') {
+        reply.header('Cache-Control', 'no-cache, no-store, must-revalidate')
+      }
+      done(null, payload)
+    })
+  } else {
+    const VITE_PORT = process.env.VITE_PORT ?? '5173'
+    fastify.get('/', (request, reply) => {
+      const host = request.hostname?.split(':')[0] || '127.0.0.1'
+      reply.redirect(`http://${host}:${VITE_PORT}/`)
+    })
+  }
 
   await fastify.register(authPlugin)
   await fastify.register(adminPlugin)

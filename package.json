@@ -33,13 +33,16 @@
     },
     "files": [
         "dist",
-        "public",
         "bin"
     ],
     "scripts": {
-        "dev": "tsx watch src/app.ts",
-        "build": "tsc",
-        "start": "node dist/app.js",
+        "dev": "concurrently \"tsx watch src/app.ts\" \"vite --config vite.config.ts\"",
+        "dev:api": "tsx watch src/app.ts",
+        "dev:client": "vite --config vite.config.ts",
+        "build": "tsc && vite build --config vite.config.ts",
+        "build:server": "tsc",
+        "build:client": "vite build --config vite.config.ts",
+        "start": "cross-env NODE_ENV=production node dist/app.js",
         "test:smoke": "node test/smoke.mjs",
         "test:browser": "node test/browser-acceptance.mjs",
         "check": "npm run build && npm run test:smoke",
@@ -48,6 +51,7 @@
         "release:major": "npm run build && npm version major && git push && git push origin --tags"
     },
     "dependencies": {
+        "@fastify/compress": "^7.0.3",
         "@fastify/cors": "^9",
         "@fastify/jwt": "^8",
         "@fastify/static": "^7",
@@ -64,7 +68,14 @@
         "@types/node": "^20",
         "@types/nodemailer": "^6",
         "@types/uuid": "^9",
+        "@vitejs/plugin-react": "^6.0.1",
+        "concurrently": "^9.2.1",
+        "cross-env": "^7.0.3",
+        "lucide-react": "^0.577.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
         "tsx": "^4",
-        "typescript": "^5"
+        "typescript": "^5",
+        "vite": "^8.0.0"
     }
 }
