@@ -100,10 +100,22 @@ function App() {
   React.useEffect(() => {
     const script = state?.config?.analyticsScript;
     if (!script || typeof script !== 'string' || analyticsInjectedRef.current) return;
-    const wrap = document.createElement('div');
-    wrap.innerHTML = script;
-    wrap.style.display = 'none';
-    document.body.appendChild(wrap);
+
+    const container = document.createElement('div');
+    container.innerHTML = script;
+    const scriptNodes = container.querySelectorAll('script');
+
+    scriptNodes.forEach((oldScript) => {
+      const newScript = document.createElement('script');
+      Array.from(oldScript.attributes).forEach((attr) => {
+        newScript.setAttribute(attr.name, attr.value);
+      });
+      if (!oldScript.src) {
+        newScript.textContent = oldScript.textContent || '';
+      }
+      document.body.appendChild(newScript);
+    });
+
     analyticsInjectedRef.current = true;
   }, [state?.config?.analyticsScript]);
 
