@@ -113,6 +113,15 @@ function validateSystemConfig(body: Record<string, unknown>) {
     fields.emailDomainWhitelist = '启用邮箱域名限制时，白名单不能为空'
   }
 
+  if (body.analyticsScript !== undefined) {
+    const analyticsScript = String(body.analyticsScript)
+    if (analyticsScript.length > 10000) {
+      fields.analyticsScript = '统计代码最多 10000 字符'
+    } else {
+      updates.analyticsScript = analyticsScript
+    }
+  }
+
   return { fields, updates }
 }
 
@@ -174,15 +183,17 @@ function validateEmailConfig(body: Record<string, unknown>) {
 const configRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/system', async (_req, reply) => {
     const row = db.select().from(systemConfig).where(eq(systemConfig.id, 'default')).get()
-    reply.send({
-      success: true,
-      data: {
-        siteTitle: row?.siteTitle ?? '资源导航系统',
-        siteSubtitle: row?.siteSubtitle ?? '统一管理与访问你的资源',
-        logoUrl: row?.logoUrl ?? '',
-        enableRegister: row?.enableRegister ?? true,
-      },
-    })
+    const isProduction = process.env.NODE_ENV === 'production'
+    const data: Record<string, unknown> = {
+      siteTitle: row?.siteTitle ?? '资源导航系统',
+      siteSubtitle: row?.siteSubtitle ?? '统一管理与访问你的资源',
+      logoUrl: row?.logoUrl ?? '',
+      enableRegister: row?.enableRegister ?? true,
+    }
+    if (isProduction && row?.analyticsScript) {
+      data.analyticsScript = row.analyticsScript
+    }
+    reply.send({ success: true, data })
   })
 
   fastify.get('/system/full', { preHandler: fastify.requireAdmin }, async (_req, reply) => {

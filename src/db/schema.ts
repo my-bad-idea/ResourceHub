@@ -65,7 +65,8 @@ export const systemConfig = sqliteTable('system_config', {
   resetTokenExpiry:     integer('reset_token_expiry').notNull().default(60),
   enableRegister:       integer('enable_register', { mode: 'boolean' }).notNull().default(true),
   restrictEmailDomain:  integer('restrict_email_domain', { mode: 'boolean' }).notNull().default(false),
-  emailDomainWhitelist: text('email_domain_whitelist').default('')
+  emailDomainWhitelist: text('email_domain_whitelist').default(''),
+  analyticsScript:      text('analytics_script').default('')
 })
 
 export const emailConfig = sqliteTable('email_config', {

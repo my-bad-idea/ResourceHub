@@ -19,6 +19,7 @@ function AdminConfig() {
     enableRegister: true,
     restrictEmailDomain: false,
     emailDomainWhitelist: '',
+    analyticsScript: '',
   });
   const [errors, setErrors] = React.useState({});
   const [loading, setLoading] = React.useState(true);
@@ -40,6 +41,7 @@ function AdminConfig() {
           enableRegister: cfg.enableRegister !== false,
           restrictEmailDomain: cfg.restrictEmailDomain === true,
           emailDomainWhitelist: cfg.emailDomainWhitelist || '',
+          analyticsScript: cfg.analyticsScript || '',
         });
       }
       setLoading(false);
@@ -60,6 +62,7 @@ function AdminConfig() {
         enableRegister: form.enableRegister,
         restrictEmailDomain: form.restrictEmailDomain,
         emailDomainWhitelist: form.restrictEmailDomain ? form.emailDomainWhitelist : '',
+        analyticsScript: form.analyticsScript || '',
       };
 
       const { ok, data } = await request('/api/config/system', {
@@ -251,6 +254,27 @@ function AdminConfig() {
             className="rh-admin-input" style={inputStyle('emailDomainWhitelist')} placeholder="example.com,corp.com" disabled={saving || !form.restrictEmailDomain} />
           {errors.emailDomainWhitelist && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.emailDomainWhitelist}</div>}
           <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>多个域名用英文逗号分隔，留空则不限制</div>
+        </div>
+
+        <div style={fieldStyle}>
+          <label style={labelStyle}>页面统计代码</label>
+          <textarea
+            value={form.analyticsScript}
+            onChange={e => setForm(f => ({ ...f, analyticsScript: e.target.value }))}
+            className="rh-admin-input"
+            style={{
+              ...inputStyle('analyticsScript'),
+              minHeight: '120px',
+              resize: 'vertical',
+              fontFamily: 'ui-monospace, monospace',
+              fontSize: '13px',
+            }}
+            placeholder="粘贴百度统计、Google Analytics 等提供的 &lt;script&gt;...&lt;/script&gt; 代码片段，仅在生产环境生效"
+            disabled={saving}
+            rows={6}
+          />
+          {errors.analyticsScript && <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{errors.analyticsScript}</div>}
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>仅在生产环境启用；路由切换时会自动上报页面浏览，支持百度统计与 Google Analytics。</div>
         </div>
       </div>
     </div>

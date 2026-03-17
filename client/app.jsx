@@ -28,6 +28,7 @@ function App() {
   const currentToken = state ? state.token : null;
   const currentUserId = state?.currentUser?.id ?? null;
   const currentLocale = state?.locale || getCurrentLocale() || 'zh-Hans';
+  const analyticsInjectedRef = React.useRef(false);
 
   const hydrateAuthenticatedPreferences = React.useCallback((user) => {
     if (!user) return;
@@ -95,6 +96,26 @@ function App() {
   React.useEffect(() => {
     document.title = state?.config?.siteTitle || translateText('资源导航系统') || '资源导航系统';
   }, [currentLocale, state?.config?.siteTitle]);
+
+  React.useEffect(() => {
+    const script = state?.config?.analyticsScript;
+    if (!script || typeof script !== 'string' || analyticsInjectedRef.current) return;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = script;
+    wrap.style.display = 'none';
+    document.body.appendChild(wrap);
+    analyticsInjectedRef.current = true;
+  }, [state?.config?.analyticsScript]);
+
+  React.useEffect(() => {
+    if (!analyticsInjectedRef.current || path.startsWith('/admin')) return;
+    if (typeof window._hmt === 'object' && Array.isArray(window._hmt)) {
+      try { window._hmt.push(['_trackPageview', path]); } catch (_) {}
+    }
+    if (typeof window.gtag === 'function') {
+      try { window.gtag('event', 'page_view', { page_path: path }); } catch (_) {}
+    }
+  }, [path]);
 
   React.useEffect(() => {
     if (initializing) return;

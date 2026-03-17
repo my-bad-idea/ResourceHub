@@ -79,7 +79,8 @@ export function runMigrations(): void {
       reset_token_expiry INTEGER NOT NULL DEFAULT 60,
       enable_register INTEGER NOT NULL DEFAULT 1,
       restrict_email_domain INTEGER NOT NULL DEFAULT 0,
-      email_domain_whitelist TEXT DEFAULT ''
+      email_domain_whitelist TEXT DEFAULT '',
+      analytics_script TEXT DEFAULT ''
     );
 
     CREATE TABLE IF NOT EXISTS email_config (
@@ -111,6 +112,11 @@ export function runMigrations(): void {
     INSERT OR IGNORE INTO system_config (id) VALUES ('default');
     INSERT OR IGNORE INTO email_config (id) VALUES ('default');
   `)
+
+  const sysConfigCols = sqlite.prepare("PRAGMA table_info(system_config)").all() as { name: string }[]
+  if (sysConfigCols.length > 0 && !sysConfigCols.some((c) => c.name === 'analytics_script')) {
+    sqlite.exec('ALTER TABLE system_config ADD COLUMN analytics_script TEXT DEFAULT \'\'')
+  }
 
   const oldVisitHourly = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='resource_visit_hourly'").get() as { name?: string } | undefined
   if (oldVisitHourly?.name) {
