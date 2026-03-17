@@ -28,7 +28,7 @@ function persistUiPreferencesForState(state) {
 
 const initialState = {
   currentUser: null,
-  token: sessionStorage.getItem('rh_token'),
+  token: localStorage.getItem('rh_token'),
   resources: [],
   categories: [],
   tags: [],
@@ -53,7 +53,7 @@ const initialState = {
 function appReducer(state, action) {
   switch (action.type) {
     case 'LOGIN': {
-      sessionStorage.setItem('rh_token', action.token);
+      localStorage.setItem('rh_token', action.token);
       const authenticatedPreferences = getUserPreferences(action.user?.id) || initialUiPreferences;
       if (i18nApplyLocale) i18nApplyLocale(authenticatedPreferences.locale);
       if (applyTheme) applyTheme(authenticatedPreferences.theme);
@@ -71,7 +71,7 @@ function appReducer(state, action) {
     }
 
     case 'LOGOUT': {
-      sessionStorage.removeItem('rh_token');
+      localStorage.removeItem('rh_token');
       const guestPreferences = getGuestPreferences() || initialUiPreferences;
       if (i18nApplyLocale) i18nApplyLocale(guestPreferences.locale);
       if (applyTheme) applyTheme(guestPreferences.theme);

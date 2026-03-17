@@ -8,7 +8,7 @@ function useApi() {
   const locale = state?.locale || getCurrentLocale() || detectBrowserLocale() || 'zh-Hans';
 
   const request = useCallback(async (url, options = {}) => {
-    const token = sessionStorage.getItem('rh_token');
+    const token = localStorage.getItem('rh_token');
     const hasBody = options.body !== undefined && options.body !== null;
     const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
     const headers = {

@@ -64,7 +64,7 @@ function App() {
         if (tagsRes.status === 'fulfilled' && tagsRes.value.ok)
           dispatch({ type: 'SET_TAGS', tags: (tagsRes.value.data.data || []).map(t => t.tag || t) });
 
-        const token = sessionStorage.getItem('rh_token');
+        const token = localStorage.getItem('rh_token');
         let restoredAuthenticatedSession = false;
         if (token) {
           const meRes = await request('/api/auth/me');
