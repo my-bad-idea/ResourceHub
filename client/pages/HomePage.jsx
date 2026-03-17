@@ -1270,6 +1270,8 @@ function HomeOverview({
   onSelectCategory,
   onSelectQuickAccess,
 }) {
+  const i18n = useI18n();
+  const t = i18n?.t || ((text) => text);
   const surfaceStyle = {
     border: isLightTheme
       ? '1px solid color-mix(in srgb, var(--control-border) 78%, transparent)'
@@ -1598,9 +1600,9 @@ function HomeOverview({
       {currentUser && quickAccessEntries.length > 0 && (
         <div data-rh-home-overview-section="quick-access" style={{ display: 'grid', gap: '10px' }}>
           {renderSectionHeader({
-            title: '快捷入口',
-            description: '从收藏、历史或我的资源继续浏览和维护内容。',
-            count: `${quickAccessEntries.length} 项`,
+            title: t('快捷入口'),
+            description: t('从收藏、历史或我的资源继续浏览和维护内容。'),
+            count: t(`${quickAccessEntries.length} 项`),
           })}
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(columns, quickAccessEntries.length)}, minmax(0, 1fr))`, gap: '12px' }}>
             {quickAccessEntries.map((entry) => {
@@ -1686,9 +1688,9 @@ function HomeOverview({
 
       <div data-rh-home-overview-categories style={{ display: 'grid', gap: '10px' }}>
         {renderSectionHeader({
-          title: '分类入口',
-          description: '按主题快速浏览全部资源。',
-          count: `${categoryHighlights.length} 个分类`,
+          title: t('分类入口'),
+          description: t('按主题快速浏览全部资源。'),
+          count: t(`${categoryHighlights.length} 个分类`),
         })}
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(columns, Math.max(categoryHighlights.length, 1))}, minmax(0, 1fr))`, gap: '12px' }}>
           {categoryHighlights.map((category) => {
@@ -1762,10 +1764,10 @@ function HomeOverview({
         return (
           <div key={section.key} data-rh-home-overview-section={section.key} style={{ display: 'grid', gap: '10px' }}>
             {renderSectionHeader({
-              title: section.title,
-              description: section.description,
-              count: `${section.resources.length} 项`,
-              actionLabel: section.actionLabel,
+              title: t(section.title),
+              description: t(section.description),
+              count: t(`${section.resources.length} 项`),
+              actionLabel: section.actionLabel ? t(section.actionLabel) : undefined,
               onAction: section.action,
             })}
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${sectionColumns}, minmax(0, 1fr))`, gap: '10px' }}>
